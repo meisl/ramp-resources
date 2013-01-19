@@ -982,17 +982,21 @@ buster.testCase("Resource sets", {
             }.bind(this)), done);
         },
 
-        "fails for non-existent resource": function (done) {
+        "=>fails for non-existent resource": function (done) {
             var paths = ["*.js", "*.txt"];
+            buster.log("rootPath: " + this.rs.rootPath);
             this.rs.appendLoad(paths).then(done, done(function (err) {
+                buster.log("err.message: \"" + err.message + "\"");
                 assert.match(err.message,
                              "'*.txt' matched no files or resources");
             }));
         },
 
-        "fails for non-existent resource with leading slash": function (done) {
+        "=>fails for non-existent resource with leading slash": function (done) {
             var paths = ["/*.js", "/*.txt"];
+            buster.log("rootPath: " + this.rs.rootPath);
             this.rs.appendLoad(paths).then(done, done(function (err) {
+                buster.log("err.message: \"" + err.message + "\"");
                 assert.match(err.message,
                              "'/*.txt' matched no files or resources");
             }));
@@ -1058,17 +1062,21 @@ buster.testCase("Resource sets", {
             }.bind(this)), done);
         },
 
-        "fails for non-existent resource": function (done) {
+        "=>fails for non-existent resource": function (done) {
             var paths = ["*.js", "*.txt"];
+            buster.log("rootPath: " + this.rs.rootPath);
             this.rs.prependLoad(paths).then(done, done(function (err) {
+                buster.log("err.message: \"" + err.message + "\"");
                 assert.match(err.message,
                              "'*.txt' matched no files or resources");
             }));
         },
 
-        "fails for non-existent resource with leading slash": function (done) {
+        "=>fails for non-existent resource with leading slash": function (done) {
             var paths = ["/*.js", "/*.txt"];
+            buster.log("rootPath: " + this.rs.rootPath);
             this.rs.prependLoad(paths).then(done, done(function (err) {
+                buster.log("err.message: \"" + err.message + "\"");
                 assert.match(err.message,
                              "'/*.txt' matched no files or resources");
             }));
