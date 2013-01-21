@@ -2,13 +2,11 @@ var buster = require("buster");
 var rr = require("../lib/ramp-resources");
 var Path = require("path");
 var when = require("when");
-require("./test-helper.js");
+var h = require("./test-helper.js");
+
 var FIXTURE_DIR = Path.join(__dirname, "fixtures");
 var noop = function () {};
-var logStack = function (err) {
-    var message = (err && err.stack) || err.message;
-    if (message) { buster.log(message); }
-};
+var shouldNotProduceError = h.shouldNotProduceError;
 
 buster.testCase("Resource sets", {
     setUp: function () {
@@ -199,13 +197,13 @@ buster.testCase("Resource sets", {
             this.rs.addResource("foo.js").then(function (rs) {
                 assert.equals(rs[0].path, "/foo.js");
                 assert.content(rs[0], "var thisIsTheFoo = 5;", done);
-            }, done(logStack));
+            }, done(shouldNotProduceError));
         },
 
         "adds etag to resource": function (done) {
             this.rs.addResource("./foo.js").then(done(function (rs) {
                 assert.defined(rs[0].etag);
-            }), done(logStack));
+            }), done(shouldNotProduceError));
         },
 
         "adds resource from glob pattern": function (done) {
@@ -213,7 +211,7 @@ buster.testCase("Resource sets", {
                 assert.equals(rs.length, 2);
                 assert.equals(rs[0].path, "/bar.js");
                 assert.equals(rs[1].path, "/foo.js");
-            }), done(logStack));
+            }), done(shouldNotProduceError));
         },
 
         "uses strict globbing": function (done) {
@@ -247,7 +245,7 @@ buster.testCase("Resource sets", {
             this.rs.addResources(patterns).then(done(function (rs) {
                 assert.equals(this.rs.length, 1);
                 assert.equals(this.rs[0].path, "/some-test.js");
-            }.bind(this)), done(logStack));
+            }.bind(this)), done(shouldNotProduceError));
         },
 
         "fails for missing file": function (done) {
@@ -276,7 +274,7 @@ buster.testCase("Resource sets", {
                 etag: "abc123"
             }).then(function (rs) {
                 assert.content(rs, "var helloFromBar = 1;", done);
-            }, done(logStack));
+            }, done(shouldNotProduceError));
         },
 
         "does not override custom etag": function (done) {
@@ -284,7 +282,7 @@ buster.testCase("Resource sets", {
                 etag: "abc123"
             }).then(done(function (rs) {
                 assert.equals(rs.etag, "abc123");
-            }), done(logStack));
+            }), done(shouldNotProduceError));
         },
 
         "adds resource with custom path": function (done) {
@@ -292,7 +290,7 @@ buster.testCase("Resource sets", {
                 path: "/oh-my"
             }).then(done(function (rs) {
                 assert.equals(rs.path, "/oh-my");
-            }), done(logStack));
+            }), done(shouldNotProduceError));
         },
 
         "reads file with specified encoding": function (done) {
@@ -300,7 +298,7 @@ buster.testCase("Resource sets", {
                 encoding: "base64"
             }).then(function (rs) {
                 assert.content(rs, "dmFyIHRoaXNJc1RoZUZvbyA9IDU7", done);
-            }, done(logStack));
+            }, done(shouldNotProduceError));
         }
     },
 
@@ -323,8 +321,8 @@ buster.testCase("Resource sets", {
                 }).then(function (rs) {
                     var concat = "var thisIsTheFoo = 5;var helloFromBar = 1;";
                     assert.content(rs, concat, done);
-                }, done(logStack));
-            }.bind(this), done(logStack));
+                }, done(shouldNotProduceError));
+            }.bind(this), done(shouldNotProduceError));
         },
 
         "waits for pending adds before adding": function (done) {
@@ -334,7 +332,7 @@ buster.testCase("Resource sets", {
             ]).then(function (resources) {
                 var concat = "var thisIsTheFoo = 5;var helloFromBar = 1;";
                 assert.content(resources[2], concat, done);
-            }, done(logStack));
+            }, done(shouldNotProduceError));
         },
 
         "processes concatenated combined content": function (done) {
@@ -348,8 +346,8 @@ buster.testCase("Resource sets", {
                 this.rs.concat().then(done(function (rs) {
                     var concat = "function () {var thisIsTheFoo = 5;}";
                     assert.content(rs.get("/buster.js"), concat, done);
-                }), done(logStack));
-            }.bind(this), done(logStack));
+                }), done(shouldNotProduceError));
+            }.bind(this), done(shouldNotProduceError));
         }
     },
 
@@ -479,7 +477,7 @@ buster.testCase("Resource sets", {
                 this.rs.remove("yo");
                 assert.equals(this.rs.length, 1);
                 assert.equals(this.rs[0], this.rs.get("/hey"));
-            }.bind(this)), done(logStack));
+            }.bind(this)), done(shouldNotProduceError));
         },
 
         "removes resource from load path": function (done) {
@@ -490,7 +488,7 @@ buster.testCase("Resource sets", {
                 this.rs.loadPath.append("/yo");
                 this.rs.remove("/yo");
                 assert.equals(this.rs.loadPath.paths(), []);
-            }.bind(this)), done(logStack));
+            }.bind(this)), done(shouldNotProduceError));
         }
     },
 
@@ -955,7 +953,7 @@ buster.testCase("Resource sets", {
             this.rs.addResource({ path: "/tmp/bar.js", content: "Hmm" });
             this.rs.appendLoad(["/tmp/*.js"]).then(done(function (loadPath) {
                 assert.equals(loadPath.paths(), ["/tmp/foo.js", "/tmp/bar.js"]);
-            }), done(logStack));
+            }), done(shouldNotProduceError));
         },
 
         "adds non-existing resource": function (done) {
@@ -1030,7 +1028,7 @@ buster.testCase("Resource sets", {
             this.rs.addResource({ path: "/tmp/bar.js", content: "Hmm" });
             this.rs.prependLoad(["/tmp/*.js"]).then(done(function (loadPath) {
                 assert.equals(loadPath.paths(), ["/tmp/foo.js", "/tmp/bar.js"]);
-            }), done(logStack));
+            }), done(shouldNotProduceError));
         },
 
         "adds non-existing resource": function (done) {
@@ -1088,7 +1086,7 @@ buster.testCase("Resource sets", {
 
             this.rs.then(done(function () {
                 assert.equals(this.rs.length, 2);
-            }.bind(this)), done(logStack));
+            }.bind(this)), done(shouldNotProduceError));
         },
 
         "calls callback with resource set": function (done) {
@@ -1097,7 +1095,7 @@ buster.testCase("Resource sets", {
 
             this.rs.then(done(function (rs) {
                 assert.same(this.rs, rs);
-            }.bind(this)), done(logStack));
+            }.bind(this)), done(shouldNotProduceError));
         }
     }
 });
