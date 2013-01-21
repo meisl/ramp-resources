@@ -73,21 +73,24 @@ buster.testCase("Resource sets", {
         },
 
         "does not fail with only combine": function () {
+            var rs = this.rs;
             refute.exception(function () {
-                this.rs.addResource({ path: "/path", combine: ["/a.js"] });
-            }.bind(this));
+                rs.addResource({ path: "/path", combine: ["/a.js"] });
+            });
         },
 
         "does not fail with only file": function () {
+            var rs = this.rs;
             refute.exception(function () {
-                this.rs.addResource({ path: "/path", file: "fixtures/foo.js" });
-            }.bind(this));
+                rs.addResource({ path: "/path", file: "fixtures/foo.js" });
+            });
         },
 
         "does not fail with only etag": function () {
+            var rs = this.rs;
             refute.exception(function () {
-                this.rs.addResource({ path: "/path", etag: "abcd" });
-            }.bind(this));
+                rs.addResource({ path: "/path", etag: "abcd" });
+            });
         },
 
         "is gettable with URL path when added as system path": function (done) {
@@ -100,30 +103,32 @@ buster.testCase("Resource sets", {
 
     "adding processor": {
         "adds processor to existing resources": function (done) {
-            this.rs.addResource(
+            var rs = this.rs;
+            rs.addResource(
                 { path: "/buster.js", content: "Ok" }
             ).then(function () {
-                this.rs.addProcessor(function (resource, content) {
+                rs.addProcessor(function (resource, content) {
                     return content + "!";
                 });
-                this.rs.get("/buster.js").content().then(done(function (c) {
+                rs.get("/buster.js").content().then(done(function (c) {
                     assert.equals(c, "Ok!");
                 }));
-            }.bind(this));
+            });
         },
 
         "adds processor to future resources": function (done) {
-            this.rs.addProcessor(function (resource, content) {
+            var rs = this.rs;
+            rs.addProcessor(function (resource, content) {
                 return content + "!";
             });
 
-            this.rs.addResource(
+            rs.addResource(
                 { path: "/buster.js", content: "Ok" }
             ).then(function () {
-                this.rs.get("/buster.js").content().then(done(function (c) {
+                rs.get("/buster.js").content().then(done(function (c) {
                     assert.equals(c, "Ok!");
                 }));
-            }.bind(this));
+            });
         }
     },
 
@@ -139,9 +144,11 @@ buster.testCase("Resource sets", {
         },
 
         "resolves promise with resource": function (done) {
-            this.rs.addResource(this.resource).then(done(function (rs) {
-                assert.equals(this.resource, rs);
-            }.bind(this)));
+            var rs = this.rs;
+            var resource = this.resource;
+            rs.addResource(resource).then(done(function (actualResource) {
+                assert.equals(resource, actualResource);
+            }));
         }
     },
 
@@ -153,42 +160,51 @@ buster.testCase("Resource sets", {
         },
 
         "increments length when adding resource": function (done) {
-            this.rs.addResource(this.resource).then(done(function (rs) {
-                assert.equals(this.rs.length, 1);
-            }.bind(this)));
+            var rs = this.rs;
+            rs.addResource(this.resource).then(done(function () {
+                assert.equals(rs.length, 1);
+            }));
         },
 
         "does not increment length when overwriting": function (done) {
+            var rs = this.rs;
             var path = this.resource.path;
-            this.rs.addResource(this.resource).then(function (rs) {
+            rs.addResource(this.resource).then(function () {
                 var resource = { path: path, content: "Ok" };
-                this.rs.addResource(resource).then(done(function () {
-                    assert.equals(this.rs.length, 1);
-                }.bind(this)));
-            }.bind(this));
+                rs.addResource(resource).then(done(function () {
+                    assert.equals(rs.length, 1);
+                }));
+            });
         },
 
         "overwrites resource at numeric property": function (done) {
+            var rs = this.rs;
             var path = this.resource.path;
-            var add1 = this.rs.addResource({ path: "/meh", content: "Ok" });
-            var add2 = this.rs.addResource(this.resource);
-            var add3 = this.rs.addResource({ path: "/doh", content: "Ye" });
-            when.all([add1, add2, add3]).then(function (rs) {
+            var add1 = rs.addResource({ path: "/meh", content: "Ok" });
+            var add2 = rs.addResource(this.resource);
+            var add3 = rs.addResource({ path: "/doh", content: "Ye" });
+            when.all([add1, add2, add3]).then(function () {
                 var resource = { path: path, content: "Ok", etag: "9089" };
-                this.rs.addResource(resource).then(done(function () {
-                    assert.equals(this.rs[1].etag, "9089");
-                }.bind(this)));
-            }.bind(this));
+                rs.addResource(resource).then(done(function () {
+                    assert.equals(rs[1].etag, "9089");
+                }));
+            });
         },
 
         "exposes added resource on numeric index": function (done) {
-            var rs = rr.createResource("/sinon.js", { content: "var sinon;" });
-            when.all([this.rs.addResource(this.resource),
-                      this.rs.addResource(rs)]).then(done(function (resources) {
-                assert.equals(this.rs.length, 2);
-                assert.same(this.rs[0], this.resource);
-                assert.same(this.rs[1], rs);
-            }.bind(this)));
+            var rs = this.rs;
+            var resource0 = this.resource;
+            var resource1 = rr.createResource("/sinon.js", {
+                content: "var sinon;"
+            });
+            when.all([rs.addResource(resource0),
+                      rs.addResource(resource1)]).then(
+                done(function (resources) {
+                    assert.equals(rs.length, 2);
+                    assert.same(rs[0], resource0);
+                    assert.same(rs[1], resource1);
+                })
+            );
         }
     },
 
@@ -249,13 +265,14 @@ buster.testCase("Resource sets", {
         },
 
         "adds resource from glob pattern and file path": function (done) {
-            this.rs.rootPath = Path.join(FIXTURE_DIR, "other-test");
+            var rs = this.rs;
+            rs.rootPath = Path.join(FIXTURE_DIR, "other-test");
             var patterns = ["some-test.js", "*-test.js"];
-            this.rs.addResources(patterns).then(
-                done(function (rs) {
-                    assert.equals(this.rs.length, 1);
-                    assert.equals(this.rs[0].path, "/some-test.js");
-                }.bind(this)),
+            rs.addResources(patterns).then(
+                done(function () {
+                    assert.equals(rs.length, 1);
+                    assert.equals(rs[0].path, "/some-test.js");
+                }),
                 done(shouldNotProduceError)
             );
         },
@@ -339,20 +356,21 @@ buster.testCase("Resource sets", {
         },
 
         "combines content of referenced resources in order": function (done) {
-            this.rs.addResources(["foo.js", "bar.js"]).then(
+            var rs = this.rs;
+            rs.addResources(["foo.js", "bar.js"]).then(
                 function () {
-                    this.rs.addResource({
+                    rs.addResource({
                         path: "buster.js",
                         combine: ["foo.js", "bar.js"]
                     }).then(
-                        function (rs) {
+                        function (resource) {
                             var concat = "var thisIsTheFoo = 5;"
                                     + "var helloFromBar = 1;";
-                            assert.content(rs, concat, done);
+                            assert.content(resource, concat, done);
                         },
                         done(shouldNotProduceError)
                     );
-                }.bind(this),
+                },
                 done(shouldNotProduceError)
             );
         },
@@ -371,22 +389,24 @@ buster.testCase("Resource sets", {
         },
 
         "processes concatenated combined content": function (done) {
-            this.rs.addResources([
+            var rs = this.rs;
+            rs.addResources([
                 "foo.js", { path: "/buster.js", combine: ["foo.js"] }
             ]).then(
                 function () {
-                    var resource = this.rs.get("/buster.js");
+                    var resource = rs.get("/buster.js");
                     resource.addProcessor(function (resource, content) {
                         return "function () {" + content + "}";
                     });
-                    this.rs.concat().then(
-                        done(function (rs) {
+                    rs.concat().then(
+                        done(function (actualRs) { // TODO: isn't that done 2x?!
                             var concat = "function () {var thisIsTheFoo = 5;}";
-                            assert.content(rs.get("/buster.js"), concat, done);
+                            var resource = actualRs.get("/buster.js");
+                            assert.content(resource, concat, done);
                         }),
                         done(shouldNotProduceError)
                     );
-                }.bind(this),
+                },
                 done(shouldNotProduceError)
             );
         }
@@ -495,45 +515,49 @@ buster.testCase("Resource sets", {
 
     "remove": {
         "makes resource go away": function (done) {
+            var rs = this.rs;
             var resource = { path: "/yo", content: "Ok" };
-            this.rs.addResource(resource).then(done(function () {
-                this.rs.remove("/yo");
-                refute.defined(this.rs.get("/yo"));
-            }.bind(this)));
+            rs.addResource(resource).then(done(function () {
+                rs.remove("/yo");
+                refute.defined(rs.get("/yo"));
+            }));
         },
 
         "makes resource at normalized path go away": function (done) {
+            var rs = this.rs;
             var resource = { path: "/yo", content: "Ok" };
-            this.rs.addResource(resource).then(done(function () {
-                this.rs.remove("yo");
-                refute.defined(this.rs.get("yo"));
-            }.bind(this)));
+            rs.addResource(resource).then(done(function () {
+                rs.remove("yo");
+                refute.defined(rs.get("yo"));
+            }));
         },
 
         "readjusts numeric indices": function (done) {
-            var add1 = this.rs.addResource({ path: "/yo", content: "Ok" });
-            var add2 = this.rs.addResource({ path: "/hey", content: "Not Ok" });
+            var rs = this.rs;
+            var add1 = rs.addResource({ path: "/yo", content: "Ok" });
+            var add2 = rs.addResource({ path: "/hey", content: "Not Ok" });
 
             when.all([add1, add2]).then(
                 done(function () {
-                    this.rs.remove("yo");
-                    assert.equals(this.rs.length, 1);
-                    assert.equals(this.rs[0], this.rs.get("/hey"));
-                }.bind(this)),
+                    rs.remove("yo");
+                    assert.equals(rs.length, 1);
+                    assert.equals(rs[0], rs.get("/hey"));
+                }),
                 done(shouldNotProduceError)
             );
         },
 
         "removes resource from load path": function (done) {
-            var add1 = this.rs.addResource({ path: "/yo", content: "Ok" });
-            var add2 = this.rs.addResource({ path: "/hey", content: "Not Ok" });
+            var rs = this.rs;
+            var add1 = rs.addResource({ path: "/yo", content: "Ok" });
+            var add2 = rs.addResource({ path: "/hey", content: "Not Ok" });
 
             when.all([add1, add2]).then(
                 done(function () {
-                    this.rs.loadPath.append("/yo");
-                    this.rs.remove("/yo");
-                    assert.equals(this.rs.loadPath.paths(), []);
-                }.bind(this)),
+                    rs.loadPath.append("/yo");
+                    rs.remove("/yo");
+                    assert.equals(rs.loadPath.paths(), []);
+                }),
                 done(shouldNotProduceError)
             );
         }
@@ -579,13 +603,14 @@ buster.testCase("Resource sets", {
         },
 
         "serializes content resource": function (done) {
-            var add = this.rs.addResource({
+            var rs = this.rs;
+            var add = rs.addResource({
                 path: "/buster.js",
                 content: "var a = 42;"
             });
 
             add.then(function () {
-                this.rs.serialize().then(done(function (serialized) {
+                rs.serialize().then(done(function (serialized) {
                     assert.equals(serialized, {
                         loadPath: [],
                         resources: [{
@@ -596,11 +621,12 @@ buster.testCase("Resource sets", {
                         }]
                     });
                 }));
-            }.bind(this));
+            });
         },
 
         "serializes resource meta data": function (done) {
-            var add = this.rs.addResource({
+            var rs = this.rs;
+            var add = rs.addResource({
                 path: "/buster.js",
                 content: "var a = 42;",
                 etag: "1234abcd",
@@ -608,7 +634,7 @@ buster.testCase("Resource sets", {
             });
 
             add.then(function () {
-                this.rs.serialize().then(done(function (serialized) {
+                rs.serialize().then(done(function (serialized) {
                     assert.equals(serialized, {
                         loadPath: [],
                         resources: [{
@@ -621,17 +647,18 @@ buster.testCase("Resource sets", {
                         }]
                     });
                 }));
-            }.bind(this));
+            });
         },
 
         "serializes backend resource": function (done) {
-            var add = this.rs.addResource({
+            var rs = this.rs;
+            var add = rs.addResource({
                 path: "/app",
                 backend: "http://localhost:3000/app"
             });
 
             add.then(function () {
-                this.rs.serialize().then(done(function (serialized) {
+                rs.serialize().then(done(function (serialized) {
                     assert.equals(serialized, {
                         loadPath: [],
                         resources: [{
@@ -640,12 +667,13 @@ buster.testCase("Resource sets", {
                         }]
                     });
                 }));
-            }.bind(this));
+            });
         },
 
         "waits for pending added resource": function (done) {
-            this.rs.addResource("foo.js");
-            this.rs.serialize().then(done(function (serialized) {
+            var rs = this.rs;
+            rs.addResource("foo.js");
+            rs.serialize().then(done(function (serialized) {
                 assert.match(serialized, {
                     resources: [{
                         path: "/foo.js",
@@ -656,14 +684,15 @@ buster.testCase("Resource sets", {
         },
 
         "combine resource strips out content": function (done) {
-            this.rs.addResource({ path: "/buster.js", content: " Buster" });
-            this.rs.addResource({ path: "/sinon.js", content: " Sinon" });
-            this.rs.addResource({
+            var rs = this.rs;
+            rs.addResource({ path: "/buster.js", content: " Buster" });
+            rs.addResource({ path: "/sinon.js", content: " Sinon" });
+            rs.addResource({
                 path: "/bundle.js",
                 combine: ["/buster.js", "/sinon.js"]
             });
 
-            this.rs.serialize().then(done(function (serialized) {
+            rs.serialize().then(done(function (serialized) {
                 assert.equals(serialized.resources[2], {
                     encoding: "utf-8",
                     path: "/bundle.js",
@@ -747,28 +776,30 @@ buster.testCase("Resource sets", {
         },
 
         "includes load path": function (done) {
-            this.rs.addResources(["foo.js", "bar.js"]).then(function () {
-                this.rs.loadPath.append(["foo.js", "bar.js"]);
-            }.bind(this));
+            var rs = this.rs;
+            rs.addResources(["foo.js", "bar.js"]).then(function () {
+                rs.loadPath.append(["foo.js", "bar.js"]);
+            });
 
-            this.rs.serialize().then(done(function (serialized) {
+            rs.serialize().then(done(function (serialized) {
                 assert.match(serialized.loadPath, ["/foo.js", "/bar.js"]);
             }));
         },
 
         "fails if a resource can not be serialized": function (done) {
-            this.rs.addResource({
+            var rs = this.rs;
+            rs.addResource({
                 path: "/foo.js",
                 content: function () { throw new Error("Oops"); }
             }).then(function () {
-                this.rs.serialize().then(
-                    function () {},
+                rs.serialize().then(
+                    function () {}, // TODO: done(shouldProduceError)
                     done(function (err) {
                         assert.defined(err);
                         assert.match(err, "Oops");
                     })
                 );
-            }.bind(this));
+            });
         }
     },
 
@@ -1000,18 +1031,20 @@ buster.testCase("Resource sets", {
             this.rs.addResource({ path: "/tmp/bar.js", content: "Hmm" });
             this.rs.appendLoad(["/tmp/*.js"]).then(
                 done(function (loadPath) {
-                    assert.equals(loadPath.paths(), ["/tmp/foo.js", "/tmp/bar.js"]);
+                    var expected = ["/tmp/foo.js", "/tmp/bar.js"];
+                    assert.equals(loadPath.paths(), expected);
                 }),
                 done(shouldNotProduceError)
             );
         },
 
         "adds non-existing resource": function (done) {
-            this.rs.appendLoad("foo.js").then(function (loadPath) {
+            var rs = this.rs;
+            rs.appendLoad("foo.js").then(function (loadPath) {
                 assert.equals(loadPath.paths(), ["/foo.js"]);
                 var content = "var thisIsTheFoo = 5;";
-                assert.content(this.rs.get("/foo.js"), content, done);
-            }.bind(this), done);
+                assert.content(rs.get("/foo.js"), content, done);
+            }, done); // TODO: done(shouldNotProduceError)
         },
 
         "adds non-existing resources": function (done) {
@@ -1021,20 +1054,21 @@ buster.testCase("Resource sets", {
                 assert.equals(lp.paths(), ["/bar.js", "/foo.js", "/buster.js"]);
                 assert.content(rs.get("/bar.js"), "var helloFromBar = 1;", cb);
                 assert.content(rs.get("/foo.js"), "var thisIsTheFoo = 5;", cb);
-            }, done);
+            }, done); // TODO: done(shouldNotProduceError)
         },
 
         "does not add duplicate entries": function (done) {
-            this.rs.addResource({ path: "/foo.js", content: "Ok" });
+            var rs = this.rs;
+            rs.addResource({ path: "/foo.js", content: "Ok" });
             var paths = ["foo.js", "bar.js", "*.js"];
-            this.rs.appendLoad(paths).then(done(function (lp) {
+            rs.appendLoad(paths).then(done(function (lp) {
                 assert.equals(lp.paths(), ["/foo.js", "/bar.js", "/buster.js"]);
-            }.bind(this)), done);
+            }), done); // TODO: done(shouldNotProduceError)
         },
 
         "fails for non-existent resource": function (done) {
             var paths = ["*.js", "*.txt"];
-            this.rs.appendLoad(paths).then(done, done(function (err) {
+            this.rs.appendLoad(paths).then(done, done(function (err) { // TODO: done(shouldProduceError)
                 assert.match(err.message,
                              "'*.txt' matched no files or resources");
             }));
@@ -1042,7 +1076,7 @@ buster.testCase("Resource sets", {
 
         "fails for non-existent resource with leading slash": function (done) {
             var paths = ["/*.js", "/*.txt"];
-            this.rs.appendLoad(paths).then(done, done(function (err) {
+            this.rs.appendLoad(paths).then(done, done(function (err) { // TODO: done(shouldProduceError)
                 assert.match(err.message,
                              "'/*.txt' matched no files or resources");
             }));
@@ -1055,14 +1089,14 @@ buster.testCase("Resource sets", {
             var resource = { path: "/buster.js", content: "Ok" };
             this.rs.addResource(resource).then(function () {
                 done();
-            });
+            });  // TODO: done(shouldNotProduceError)
         },
 
         "adds existing resource to load path": function (done) {
             this.rs.addResource({ path: "/foo.js", content: "Yeah" });
             this.rs.prependLoad("foo.js").then(done(function (loadPath) {
                 assert.equals(loadPath.paths(), ["/foo.js"]);
-            }), done);
+            }), done);  // TODO: done(shouldNotProduceError)
         },
 
         "adds multiple existing resources to load path": function (done) {
@@ -1070,7 +1104,7 @@ buster.testCase("Resource sets", {
             this.rs.addResource({ path: "/bar.js", content: "Hmm" });
             this.rs.prependLoad(["foo.js", "bar.js"]).then(done(function (lp) {
                 assert.equals(lp.paths(), ["/foo.js", "/bar.js"]);
-            }), done);
+            }), done);  // TODO: done(shouldNotProduceError)
         },
 
         "adds existing resources to load path using globs": function (done) {
@@ -1078,18 +1112,20 @@ buster.testCase("Resource sets", {
             this.rs.addResource({ path: "/tmp/bar.js", content: "Hmm" });
             this.rs.prependLoad(["/tmp/*.js"]).then(
                 done(function (loadPath) {
-                    assert.equals(loadPath.paths(), ["/tmp/foo.js", "/tmp/bar.js"]);
+                    var expected = ["/tmp/foo.js", "/tmp/bar.js"];
+                    assert.equals(loadPath.paths(), expected);
                 }),
                 done(shouldNotProduceError)
             );
         },
 
         "adds non-existing resource": function (done) {
-            this.rs.prependLoad("foo.js").then(function (loadPath) {
+            var rs = this.rs;
+            rs.prependLoad("foo.js").then(function (loadPath) {
                 assert.equals(loadPath.paths(), ["/foo.js"]);
                 var content = "var thisIsTheFoo = 5;";
-                assert.content(this.rs.get("/foo.js"), content, done);
-            }.bind(this), done);
+                assert.content(rs.get("/foo.js"), content, done);
+            }, done);   // TODO: done(shouldNotProduceError)
         },
 
         "adds non-existing resources": function (done) {
@@ -1099,16 +1135,17 @@ buster.testCase("Resource sets", {
                 assert.equals(lp.paths(), ["/bar.js", "/foo.js", "/buster.js"]);
                 assert.content(rs.get("/bar.js"), "var helloFromBar = 1;", cb);
                 assert.content(rs.get("/foo.js"), "var thisIsTheFoo = 5;", cb);
-            }, done);
+            }, done);   // TODO: done(shouldNotProduceError)
         },
 
         "does not add duplicate entries": function (done) {
-            this.rs.addResource({ path: "/foo.js", content: "Ok" });
+            var rs = this.rs;
+            rs.addResource({ path: "/foo.js", content: "Ok" });
             var paths = ["foo.js", "bar.js", "*.js"];
-            this.rs.prependLoad(paths).then(done(function (loadPath) {
+            rs.prependLoad(paths).then(done(function (loadPath) {
                 assert.equals(loadPath.paths(),
                               ["/bar.js", "/buster.js", "/foo.js"]);
-            }.bind(this)), done);
+            }), done);   // TODO: done(shouldNotProduceError)
         },
 
         "fails for non-existent resource": function (done) {
@@ -1134,25 +1171,27 @@ buster.testCase("Resource sets", {
         },
 
         "calls callback after pending operations": function (done) {
-            this.rs.addResource("foo.js");
-            this.rs.addResource("bar.js");
+            var rs = this.rs;
+            rs.addResource("foo.js");
+            rs.addResource("bar.js");
 
-            this.rs.then(
+            rs.then(
                 done(function () {
-                    assert.equals(this.rs.length, 2);
-                }.bind(this)),
+                    assert.equals(rs.length, 2);
+                }),
                 done(shouldNotProduceError)
             );
         },
 
         "calls callback with resource set": function (done) {
-            this.rs.addResource("foo.js");
-            this.rs.addResource("bar.js");
+            var rs = this.rs;
+            rs.addResource("foo.js");
+            rs.addResource("bar.js");
 
-            this.rs.then(
-                done(function (rs) {
-                    assert.same(this.rs, rs);
-                }.bind(this)),
+            rs.then(
+                done(function (actualRs) {
+                    assert.same(actualRs, rs);
+                }),
                 done(shouldNotProduceError)
             );
         }
