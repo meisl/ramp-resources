@@ -70,12 +70,29 @@ B.assertions.add("resourceEqual", {
 
 /* exported functions ------------------------------------------------------ */
 
+function shouldProduceError(err) {
+    var msg = "Should produce error";
+    if (err) {
+        msg += " [possible misuse, maybe you rather wanted 'shouldNotProduceError'? Got " + err + "]";
+    }
+    B.assertions.fail(msg);
+}
+
+function shouldNotProduceError(err) {
+    assert.defined(err, "error cb should not be called at all - but it was, with err==undefined!? [possible misuse, maybe you rather wanted 'shouldProduceError'?]");
+    var message = err.stack || err.message;
+    if (message) {
+        B.log(message);
+    }
+    B.assertions.fail("Should not produce error but yielded " + err);
+}
+
 function reqBody(res, encoding, callback) {
     var data = "";
     res.setEncoding(encoding);
     res.on("data", function (chunk) { data += chunk; });
     res.on("end", function () { callback(data); });
-};
+}
 
 function req(opt, callback) {
     opt = opt || {};
@@ -94,7 +111,7 @@ function req(opt, callback) {
         });
     });
     return req;
-};
+}
 
 function createServer(middleware, done) {
     var server = http.createServer(function (req, res) {
@@ -105,12 +122,12 @@ function createServer(middleware, done) {
     });
     server.listen(2233, done);
     return server;
-};
+}
 
 function serverTearDown(done) {
     this.server.on("close", done);
     this.server.close();
-};
+}
 
 function createProxyBackend(port) {
     var backend = { requests: [] };
@@ -137,9 +154,11 @@ function createProxyBackend(port) {
     };
 
     return backend;
-};
+}
 
 module.exports = {
+    shouldProduceError: shouldProduceError,
+    shouldNotProduceError: shouldNotProduceError,
     reqBody: reqBody,
     req: req,
     createServer: createServer,
