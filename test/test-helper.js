@@ -73,13 +73,16 @@ B.assertions.add("resourceEqual", {
 function shouldProduceError(err) {
     var msg = "Should produce error";
     if (err) {
-        msg += " [possible misuse, maybe you rather wanted 'shouldNotProduceError'? Got " + err + "]";
+        msg += " [check your test - did you mean 'shouldNotProduceError'?"
+                + " Got " + err + "]";
     }
     B.assertions.fail(msg);
 }
 
 function shouldNotProduceError(err) {
-    assert.defined(err, "error cb should not be called at all - but it was, with err==undefined!? [possible misuse, maybe you rather wanted 'shouldProduceError'?]");
+    assert.defined(err, "error cb should not be called at all"
+            + " - but it was, with err==undefined!?"
+            + "[check your test - did you mean 'shouldProduceError'?]");
     var message = err.stack || err.message;
     if (message) {
         B.log(message);
@@ -98,19 +101,19 @@ function req(opt, callback) {
     opt = opt || {};
     var encoding = opt.encoding || "utf-8";
     delete opt.encoding;
-    var req = http.request(buster.extend({
+    var resultReq = http.request(buster.extend({
         method: "GET",
         host: "localhost",
         port: 2233
     }, opt));
-    req.on("response", function (res) {
+    resultReq.on("response", function (res) {
         reqBody(res, encoding, function (data) {
             if (callback) {
-                callback(req, res, data);
+                callback(resultReq, res, data);
             }
         });
     });
-    return req;
+    return resultReq;
 }
 
 function createServer(middleware, done) {

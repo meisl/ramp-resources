@@ -274,7 +274,8 @@ buster.testCase("Resource sets", {
                 assert.match(err, Path.join("..", "resource-test.js"));
                 assert.match(err, "outside the project root");
                 assert.match(err, "set rootPath to the desired root");
-                assert.match(err, rs.rootPath, "should mention actual root path");
+                assert.match(err, rs.rootPath,
+                    "should mention actual root path");
             };
             rs.addResource("../resource-test.js").then(noop, done(verify));
         }
@@ -320,7 +321,7 @@ buster.testCase("Resource sets", {
             }).then(
                 function (rs) {
                     assert.content(rs, "dmFyIHRoaXNJc1RoZUZvbyA9IDU7", done);
-                }, 
+                },
                 done(shouldNotProduceError)
             );
         }
@@ -345,7 +346,8 @@ buster.testCase("Resource sets", {
                         combine: ["foo.js", "bar.js"]
                     }).then(
                         function (rs) {
-                            var concat = "var thisIsTheFoo = 5;var helloFromBar = 1;";
+                            var concat = "var thisIsTheFoo = 5;"
+                                    + "var helloFromBar = 1;";
                             assert.content(rs, concat, done);
                         },
                         done(shouldNotProduceError)
@@ -363,7 +365,8 @@ buster.testCase("Resource sets", {
                 function (resources) {
                     var concat = "var thisIsTheFoo = 5;var helloFromBar = 1;";
                     assert.content(resources[2], concat, done);
-                }, done(shouldNotProduceError)
+                },
+                done(shouldNotProduceError)
             );
         },
 
