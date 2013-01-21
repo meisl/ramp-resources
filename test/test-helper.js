@@ -3,6 +3,8 @@ var rr = require("../lib/ramp-resources");
 var when = require("when");
 var http = require("http");
 
+/* internal functions ------------------------------------------------------ */
+
 function verifyResourceError(message, e) {
     if (e.name !== "InvalidResourceError") {
         this.fail("Expected rr.createResource to fail with " +
@@ -14,6 +16,8 @@ function verifyResourceError(message, e) {
     }
     return true;
 }
+
+/* additional assertions on buster object ---------------------------------- */
 
 B.assertions.add("invalidResource", {
     assert: function (path, res, message) {
@@ -64,14 +68,16 @@ B.assertions.add("resourceEqual", {
     assertMessage: "Expected resources ${0} and ${1} to be the same"
 });
 
-exports.reqBody = function (res, encoding, callback) {
+/* exported functions ------------------------------------------------------ */
+
+function reqBody(res, encoding, callback) {
     var data = "";
     res.setEncoding(encoding);
     res.on("data", function (chunk) { data += chunk; });
     res.on("end", function () { callback(data); });
 };
 
-exports.req = function (opt, callback) {
+function req(opt, callback) {
     opt = opt || {};
     var encoding = opt.encoding || "utf-8";
     delete opt.encoding;
@@ -81,7 +87,7 @@ exports.req = function (opt, callback) {
         port: 2233
     }, opt));
     req.on("response", function (res) {
-        exports.reqBody(res, encoding, function (data) {
+        reqBody(res, encoding, function (data) {
             if (callback) {
                 callback(req, res, data);
             }
@@ -90,7 +96,7 @@ exports.req = function (opt, callback) {
     return req;
 };
 
-exports.createServer = function createServer(middleware, done) {
+function createServer(middleware, done) {
     var server = http.createServer(function (req, res) {
         if (!middleware.respond(req, res)) {
             res.writeHead(418);
@@ -101,18 +107,18 @@ exports.createServer = function createServer(middleware, done) {
     return server;
 };
 
-exports.serverTearDown = function serverTearDown(done) {
+function serverTearDown(done) {
     this.server.on("close", done);
     this.server.close();
 };
 
-exports.createProxyBackend = function (port) {
+function createProxyBackend(port) {
     var backend = { requests: [] };
 
     var server = http.createServer(function (req, res) {
         backend.requests.push({ req: req, res: res });
         if (backend.onRequest) {
-            exports.reqBody(req, "utf-8", function (body) {
+            reqBody(req, "utf-8", function (body) {
                 backend.onRequest(req, res, body);
             });
         }
@@ -131,4 +137,12 @@ exports.createProxyBackend = function (port) {
     };
 
     return backend;
+};
+
+module.exports = {
+    reqBody: reqBody,
+    req: req,
+    createServer: createServer,
+    serverTearDown: serverTearDown,
+    createProxyBackend: createProxyBackend
 };
