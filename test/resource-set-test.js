@@ -1088,7 +1088,7 @@ buster.testCase("Resource sets", {
 
             this.rs.then(done(function () {
                 assert.equals(this.rs.length, 2);
-            }.bind(this)), logStack(done));
+            }.bind(this)), done(logStack));
         },
 
         "calls callback with resource set": function (done) {
@@ -1097,7 +1097,7 @@ buster.testCase("Resource sets", {
 
             this.rs.then(done(function (rs) {
                 assert.same(this.rs, rs);
-            }.bind(this)), logStack(done));
+            }.bind(this)), done(logStack));
         }
     }
 });
