@@ -980,7 +980,7 @@ buster.testCase("Resource sets", {
                     rr.deserialize(serialized).then(
                         function (actualRs) {
                             assert.equals(actualRs.length, rs.length);
-                            assert.equals(actualRs.loadPath.paths, rs.loadPath.paths);
+                            assert.equals(actualRs.loadPath.paths(), rs.loadPath.paths());
                             assert.resourceEqual(actualRs.get("/foo.js"),
                                                  rs.get("/foo.js"), cb);
                             assert.resourceEqual(actualRs.get("/bar.js"),
