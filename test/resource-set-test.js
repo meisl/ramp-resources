@@ -4,10 +4,10 @@ var rr = require("../lib/ramp-resources");
 var Path = require("path");
 var when = require("when");
 var h = require("./test-helper.js");
-
-var FIXTURE_DIR = Path.join(__dirname, "fixtures");
 var shouldProduceError = h.shouldProduceError;
 var shouldNotProduceError = h.shouldNotProduceError;
+
+var FIXTURE_DIR = Path.join(__dirname, "fixtures");
 
 buster.testCase("Resource sets", {
     setUp: function () {
@@ -978,13 +978,13 @@ buster.testCase("Resource sets", {
             rs.serialize().then(
                 function (serialized) {
                     rr.deserialize(serialized).then(
-                        function (rs2) {
-                            assert.equals(rs.length, rs2.length);
-                            assert.equals(rs.loadPath.paths, rs.loadPath.paths);
-                            assert.resourceEqual(rs.get("/foo.js"),
-                                                 rs2.get("/foo.js"), cb);
-                            assert.resourceEqual(rs.get("/bar.js"),
-                                                 rs2.get("/bar.js"), cb);
+                        function (actualRs) {
+                            assert.equals(actualRs.length, rs.length);
+                            assert.equals(actualRs.loadPath.paths, rs.loadPath.paths);
+                            assert.resourceEqual(actualRs.get("/foo.js"),
+                                                 rs.get("/foo.js"), cb);
+                            assert.resourceEqual(actualRs.get("/bar.js"),
+                                                 rs.get("/bar.js"), cb);
                         },
                         done(shouldNotProduceError)
                     );
