@@ -6,7 +6,7 @@ var when = require("when");
 var h = require("./test-helper.js");
 
 var FIXTURE_DIR = Path.join(__dirname, "fixtures");
-var noop = function () {};
+var shouldProduceError = h.shouldProduceError;
 var shouldNotProduceError = h.shouldNotProduceError;
 
 buster.testCase("Resource sets", {
@@ -327,7 +327,7 @@ buster.testCase("Resource sets", {
 
         "fails for missing file": function (done) {
             this.rs.addResource("oops.js").then(
-                noop, // TODO: use shouldProduceError
+                done(shouldProduceError),
                 done(function (err) {
                     assert.defined(err);
                     assert.match(err.message, "'oops.js' matched no files");
@@ -345,7 +345,7 @@ buster.testCase("Resource sets", {
                 assert.match(err, rs.rootPath, "should mention actual root path");
             };
             rs.addResource("../resource-test.js").then(
-                noop, // TODO: use shouldProduceError
+                done(shouldProduceError),
                 done(verify)
             );
         }
