@@ -280,9 +280,7 @@ buster.testCase("Resource sets", {
 
         "uses strict globbing": function (done) {
             this.rs.addResource("zyng.js").then(
-                done(function () { // TODO: use shouldProduceError
-                    assert(false, "Should produce error");
-                }),
+                done(shouldProduceError),
                 done(function (err) {
                     assert.match(err.message, "zyng.js");
                 })
@@ -291,9 +289,7 @@ buster.testCase("Resource sets", {
 
         "uses strict globbing with multiple patterns": function (done) {
             this.rs.addResources(["zyng.js"]).then(
-                done(function () { // TODO: use shouldProduceError
-                    assert(false, "Should produce error");
-                }),
+                done(shouldProduceError),
                 done(function (err) {
                     assert.match(err.message, "zyng.js");
                 })
@@ -303,9 +299,7 @@ buster.testCase("Resource sets", {
         "uses strict globbing to catch non-matching pattern": function (done) {
             var patterns = ["foo.js", "zyng/*.js"];
             this.rs.addResources(patterns).then(
-                done(function () { // TODO: use shouldProduceError
-                    assert(false, "Should produce error");
-                }),
+                done(shouldProduceError),
                 done(function (err) {
                     assert.match(err.message, "zyng/*.js");
                 })
