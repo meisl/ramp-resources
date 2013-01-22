@@ -397,7 +397,7 @@ buster.testCase("Resource sets", {
                 path: "buster.js",
                 combine: ["a.js", "b.js"]
             }).then(
-                done, // TODO: use shouldProduceError
+                done(shouldProduceError),
                 done(function (err) {
                     assert.match(err, "Cannot build combined resource /buster.js");
                     assert.match(err, "a.js is not an available resource");
@@ -1252,7 +1252,7 @@ buster.testCase("Resource sets", {
         "fails for non-existent resource": function (done) {
             var paths = ["*.js", "*.txt"];
             this.rs.appendLoad(paths).then(
-                done, // TODO: done(shouldProduceError)
+                done(shouldProduceError),
                 done(function (err) {
                     assert.match(err.message,
                                  "'*.txt' matched no files or resources");
@@ -1263,7 +1263,7 @@ buster.testCase("Resource sets", {
         "fails for non-existent resource with leading slash": function (done) {
             var paths = ["/*.js", "/*.txt"];
             this.rs.appendLoad(paths).then(
-                done, // TODO: done(shouldProduceError)
+                done(shouldProduceError),
                 done(function (err) {
                     assert.match(err.message,
                                  "'/*.txt' matched no files or resources");
@@ -1356,7 +1356,7 @@ buster.testCase("Resource sets", {
         "fails for non-existent resource": function (done) {
             var paths = ["*.js", "*.txt"];
             this.rs.prependLoad(paths).then(
-                done,   // TODO: use shouldProduceError
+                done(shouldProduceError),
                 done(function (err) {
                     assert.match(err.message,
                                  "'*.txt' matched no files or resources");
@@ -1367,7 +1367,7 @@ buster.testCase("Resource sets", {
         "fails for non-existent resource with leading slash": function (done) {
             var paths = ["/*.js", "/*.txt"];
             this.rs.prependLoad(paths).then(
-                done,   // TODO: use shouldProduceError
+                done(shouldProduceError),
                 done(function (err) {
                     assert.match(err.message,
                                  "'/*.txt' matched no files or resources");
