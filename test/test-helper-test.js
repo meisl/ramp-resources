@@ -6,44 +6,67 @@ buster.testCase("Test helpers", {
     setUp: function () {
         var self = this;
 
-        self.originalFail = buster.assertions.fail;
+        var f;
         self.replaceBustersFail = function () {
-            return (buster.assertions.fail = self.spy());
+            if (self.failStubbed) {
+                throw new Error("Buster's fail has already been replaced!");
+            }
+            f = self.stub(buster.assertions, "fail");
+            self.failStubbed = true;
         };
         self.restoreBustersFail = function () {
-            buster.assertions.fail = self.originalFail;
+            if (!self.failStubbed) {
+                throw new Error("Buster's fail was never replaced!");
+            }
+            f.restore();
+            self.failStubbed = false;
+            return f;
         };
 
-        self.originalLog = buster.log;
+        var l;
         self.replaceBustersLog = function () {
-            return (buster.log = self.spy());
+            if (self.logStubbed) {
+                throw new Error("Buster's log has already been replaced!");
+            }
+            l = self.stub(buster, "log");
+            self.logStubbed = true;
         };
         self.restoreBustersLog = function () {
-            buster.log = self.originalLog;
+            if (!self.logStubbed) {
+                throw new Error("Buster's log was never replaced!");
+            }
+            l.restore();
+            self.logStubbed = false;
+            return l;
         };
     },
 
     tearDown: function () {
-        this.restoreBustersFail();
-        this.restoreBustersLog();
+        if (this.failStubbed) {
+            throw new Error("Check your test - must call this.restoreBustersFail()!");
+        }
+        if (this.logStubbed) {
+            throw new Error("Check your test - must call this.restoreBustersLog()!");
+        }
     },
 
     "shouldProduceError": {
 
         "with no arg triggers 1 fail": function () {
-            var f = this.replaceBustersFail();
+            this.replaceBustersFail();
             h.shouldProduceError();
-            this.restoreBustersFail();
+            var f = this.restoreBustersFail();
             var m = f.args[0][0];
 
             assert.calledOnce(f);
             assert.match(m, "Should produce error", "failure message");
+            assert(true);
         },
 
         "with error arg triggers 1 fail and warns about possible misuse": function () {
-            var f = this.replaceBustersFail();
+            this.replaceBustersFail();
             h.shouldProduceError(new TypeError("Boom!"));
-            this.restoreBustersFail();
+            var f = this.restoreBustersFail();
             var m = f.args[0][0];
 
             assert.calledOnce(f);
@@ -58,9 +81,9 @@ buster.testCase("Test helpers", {
     "shouldNotProduceError": {
 
         "with no arg triggers 2 fails and warns about possible misuse": function () {
-            var f = this.replaceBustersFail();
+            this.replaceBustersFail();
             h.shouldNotProduceError();
-            this.restoreBustersFail();
+            var f = this.restoreBustersFail();
             var m0 = f.args[0][0];
             var m1 = f.args[1][0];
 
@@ -74,11 +97,11 @@ buster.testCase("Test helpers", {
 
         "with error arg": {
             "triggers 1 fail": function () {
-                var f = this.replaceBustersFail();
-                var l = this.replaceBustersLog();
+                this.replaceBustersFail();
+                this.replaceBustersLog(); // suppress log output
                 h.shouldNotProduceError(new TypeError("Bang!"));
-                this.restoreBustersFail();
-                this.restoreBustersLog();
+                var f = this.restoreBustersFail();
+                var l = this.restoreBustersLog();
                 var m = f.args[0][0];
 
                 assert.calledOnce(f);
@@ -88,12 +111,12 @@ buster.testCase("Test helpers", {
             },
 
             "writes error's stack to buster.log": function () {
-                var f = this.replaceBustersFail();
-                var l = this.replaceBustersLog();
+                this.replaceBustersFail();
+                this.replaceBustersLog();
                 var error = new TypeError("Crash!");
                 h.shouldNotProduceError(error);
-                this.restoreBustersFail();
-                this.restoreBustersLog();
+                var f = this.restoreBustersFail();
+                var l = this.restoreBustersLog();
                 var m = l.args[0][0];
 
                 assert.calledOnce(l);
