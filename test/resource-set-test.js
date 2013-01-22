@@ -919,7 +919,7 @@ buster.testCase("Resource sets", {
             }).then(
                 function () {
                     rs.serialize().then(
-                        function () {}, // TODO: done(shouldProduceError)
+                        done(shouldProduceError),
                         done(function (err) {
                             assert.defined(err);
                             assert.match(err, "Oops");
@@ -1003,7 +1003,7 @@ buster.testCase("Resource sets", {
             rr.deserialize({ loadPath: ["/buster.js"], resources: [{
                 path: "/buster.js"
             }] }).then(
-                function () {}, // TODO: use done(shouldProduceError)
+                done(shouldProduceError),
                 done(function (err) {
                     assert.defined(err);
                     assert.match(err, "No content");
