@@ -83,7 +83,7 @@ function shouldNotProduceError(err) {
     assert.defined(err, "error cb should not be called at all"
             + " - but it was, with err==undefined!?"
             + "[check your test - did you mean 'shouldProduceError'?]");
-    var message = err.stack || err.message;
+    var message = err && (err.stack || err.message);
     if (message) {
         B.log(message);
     }
