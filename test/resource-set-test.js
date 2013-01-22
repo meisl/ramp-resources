@@ -1191,7 +1191,7 @@ buster.testCase("Resource sets", {
                 done(function (loadPath) {
                     assert.equals(loadPath.paths(), ["/foo.js"]);
                 }),
-                done // FIXME
+                done(shouldNotProduceError)
             );
         },
 
@@ -1202,7 +1202,7 @@ buster.testCase("Resource sets", {
                 done(function (lp) {
                     assert.equals(lp.paths(), ["/foo.js", "/bar.js"]);
                 }),
-                done // FIXME
+                done(shouldNotProduceError)
             );
         },
 
@@ -1226,7 +1226,7 @@ buster.testCase("Resource sets", {
                     var content = "var thisIsTheFoo = 5;";
                     assert.content(rs.get("/foo.js"), content, done);
                 },
-                done // FIXME
+                done(shouldNotProduceError)
             );
         },
 
@@ -1239,7 +1239,7 @@ buster.testCase("Resource sets", {
                     assert.content(rs.get("/bar.js"), "var helloFromBar = 1;", cb);
                     assert.content(rs.get("/foo.js"), "var thisIsTheFoo = 5;", cb);
                 },
-                done // FIXME
+                done(shouldNotProduceError)
             );
         },
 
@@ -1251,7 +1251,7 @@ buster.testCase("Resource sets", {
                 done(function (lp) {
                     assert.equals(lp.paths(), ["/foo.js", "/bar.js", "/buster.js"]);
                 }),
-                done // FIXME
+                done(shouldNotProduceError)
             );
         },
 
@@ -1294,7 +1294,7 @@ buster.testCase("Resource sets", {
                 done(function (loadPath) {
                     assert.equals(loadPath.paths(), ["/foo.js"]);
                 }),
-                done  // FIXME
+                done(shouldNotProduceError)
             );
         },
 
@@ -1305,7 +1305,7 @@ buster.testCase("Resource sets", {
                 done(function (lp) {
                     assert.equals(lp.paths(), ["/foo.js", "/bar.js"]);
                 }),
-                done // FIXME
+                done(shouldNotProduceError)
             );
         },
 
@@ -1329,7 +1329,7 @@ buster.testCase("Resource sets", {
                     var content = "var thisIsTheFoo = 5;";
                     assert.content(rs.get("/foo.js"), content, done);
                 },
-                done // FIXME
+                done(shouldNotProduceError)
             );
         },
 
@@ -1342,7 +1342,7 @@ buster.testCase("Resource sets", {
                     assert.content(rs.get("/bar.js"), "var helloFromBar = 1;", cb);
                     assert.content(rs.get("/foo.js"), "var thisIsTheFoo = 5;", cb);
                 },
-                done // FIXME
+                done(shouldNotProduceError)
             );
         },
 
@@ -1355,7 +1355,7 @@ buster.testCase("Resource sets", {
                     assert.equals(loadPath.paths(),
                                   ["/bar.js", "/buster.js", "/foo.js"]);
                 }),
-                done // FIXME
+                done(shouldNotProduceError)
             );
         },
 
