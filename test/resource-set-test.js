@@ -1,3 +1,4 @@
+/*jslint maxlen:100*/
 var buster = require("buster");
 var rr = require("../lib/ramp-resources");
 var Path = require("path");
@@ -98,7 +99,8 @@ buster.testCase("Resource sets", {
             this.rs.addFileResource(path).then(
                 done(function (resource) {
                     assert.equals(resource.path, "/test/my-testish.js");
-                })
+                }),
+                done(shouldNotProduceError)
             );
         }
     },
@@ -113,12 +115,16 @@ buster.testCase("Resource sets", {
                     rs.addProcessor(function (resource, content) {
                         return content + "!";
                     });
+                    // TODO: maybe better move the rs.get(..) outside .then()?
+                    //       e.g. rs.get("/xxx") times out instead of ReferenceError
                     rs.get("/buster.js").content().then(
                         done(function (c) {
                             assert.equals(c, "Ok!");
-                        })
+                        }),
+                        done(shouldNotProduceError)
                     );
-                }
+                },
+                done(shouldNotProduceError)
             );
         },
 
@@ -132,12 +138,16 @@ buster.testCase("Resource sets", {
                 { path: "/buster.js", content: "Ok" }
             ).then(
                 function () {
+                    // TODO: maybe better move the rs.get(..) outside .then()?
+                    //       e.g. rs.get("/xxx") times out instead of ReferenceError
                     rs.get("/buster.js").content().then(
                         done(function (c) {
                             assert.equals(c, "Ok!");
-                        })
+                        }),
+                        done(shouldNotProduceError)
                     );
-                }
+                },
+                done(shouldNotProduceError)
             );
         }
     },
@@ -159,7 +169,8 @@ buster.testCase("Resource sets", {
             rs.addResource(resource).then(
                 done(function (actualResource) {
                     assert.equals(resource, actualResource);
-                })
+                }),
+                done(shouldNotProduceError)
             );
         }
     },
@@ -176,7 +187,8 @@ buster.testCase("Resource sets", {
             rs.addResource(this.resource).then(
                 done(function () {
                     assert.equals(rs.length, 1);
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -189,9 +201,11 @@ buster.testCase("Resource sets", {
                     rs.addResource(resource).then(
                         done(function () {
                             assert.equals(rs.length, 1);
-                        })
+                        }),
+                        done(shouldNotProduceError)
                     );
-                }
+                },
+                done(shouldNotProduceError)
             );
         },
 
@@ -207,9 +221,11 @@ buster.testCase("Resource sets", {
                     rs.addResource(resource).then(
                         done(function () {
                             assert.equals(rs[1].etag, "9089");
-                        })
+                        }),
+                        done(shouldNotProduceError)
                     );
-                }
+                },
+                done(shouldNotProduceError)
             );
         },
 
@@ -225,7 +241,8 @@ buster.testCase("Resource sets", {
                     assert.equals(rs.length, 2);
                     assert.same(rs[0], resource0);
                     assert.same(rs[1], resource1);
-                })
+                }),
+                done(shouldNotProduceError)
             );
         }
     },
@@ -263,7 +280,7 @@ buster.testCase("Resource sets", {
 
         "uses strict globbing": function (done) {
             this.rs.addResource("zyng.js").then(
-                done(function () {
+                done(function () { // TODO: use shouldProduceError
                     assert(false, "Should produce error");
                 }),
                 done(function (err) {
@@ -274,7 +291,7 @@ buster.testCase("Resource sets", {
 
         "uses strict globbing with multiple patterns": function (done) {
             this.rs.addResources(["zyng.js"]).then(
-                done(function () {
+                done(function () { // TODO: use shouldProduceError
                     assert(false, "Should produce error");
                 }),
                 done(function (err) {
@@ -286,7 +303,7 @@ buster.testCase("Resource sets", {
         "uses strict globbing to catch non-matching pattern": function (done) {
             var patterns = ["foo.js", "zyng/*.js"];
             this.rs.addResources(patterns).then(
-                done(function () {
+                done(function () { // TODO: use shouldProduceError
                     assert(false, "Should produce error");
                 }),
                 done(function (err) {
@@ -320,13 +337,12 @@ buster.testCase("Resource sets", {
 
         "fails for file outside root path": function (done) {
             var rs = this.rs;
-            var verify = function (err) {
+            var verify = function (err) { // TODO: use this pattern elsewhere?
                 assert.defined(err);
                 assert.match(err, Path.join("..", "resource-test.js"));
                 assert.match(err, "outside the project root");
                 assert.match(err, "set rootPath to the desired root");
-                assert.match(err, rs.rootPath,
-                    "should mention actual root path");
+                assert.match(err, rs.rootPath, "should mention actual root path");
             };
             rs.addResource("../resource-test.js").then(
                 noop, // TODO: use shouldProduceError
@@ -405,7 +421,7 @@ buster.testCase("Resource sets", {
                     }).then(
                         function (resource) {
                             var concat = "var thisIsTheFoo = 5;"
-                                    + "var helloFromBar = 1;";
+                                       + "var helloFromBar = 1;";
                             assert.content(resource, concat, done);
                         },
                         done(shouldNotProduceError)
@@ -442,7 +458,7 @@ buster.testCase("Resource sets", {
                         done(function (actualRs) { // TODO: isn't that done 2x?!
                             var concat = "function () {var thisIsTheFoo = 5;}";
                             var resource = actualRs.get("/buster.js");
-                            assert.content(resource, concat, done);
+                            assert.content(resource, concat, done); // <-----^
                         }),
                         done(shouldNotProduceError)
                     );
@@ -478,7 +494,8 @@ buster.testCase("Resource sets", {
                 done(function () {
                     assert.calledOnce(resources[0].process);
                     assert.calledOnce(resources[1].process);
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -497,7 +514,8 @@ buster.testCase("Resource sets", {
                 done(function () {
                     refute.called(resources[0].process);
                     assert.calledOnce(resources[1].process);
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -516,7 +534,8 @@ buster.testCase("Resource sets", {
                 done(function () {
                     assert.calledOnce(resources[0].process);
                     assert.calledOnce(resources[1].process);
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -537,7 +556,8 @@ buster.testCase("Resource sets", {
                 done(function () {
                     refute.called(resources[0].process);
                     assert.calledOnce(resources[1].process);
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -558,7 +578,8 @@ buster.testCase("Resource sets", {
                         "/a.txt": ["1234"],
                         "/b.txt": ["2345"]
                     });
-                })
+                }),
+                done(shouldNotProduceError)
             );
         }
     },
@@ -571,7 +592,8 @@ buster.testCase("Resource sets", {
                 done(function () {
                     rs.remove("/yo");
                     refute.defined(rs.get("/yo"));
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -582,7 +604,8 @@ buster.testCase("Resource sets", {
                 done(function () {
                     rs.remove("yo");
                     refute.defined(rs.get("yo"));
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -624,7 +647,8 @@ buster.testCase("Resource sets", {
                 this.rs.addResource({ path: "/2.js", content: "2.js" }),
                 this.rs.addResource({ path: "/3.js", content: "3.js" })
             ]).then(
-                done
+                done,
+                done(shouldNotProduceError)
             );
         },
 
@@ -656,7 +680,8 @@ buster.testCase("Resource sets", {
             this.rs.serialize().then(
                 done(function (serialized) {
                     assert.isObject(serialized);
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -680,9 +705,11 @@ buster.testCase("Resource sets", {
                                     cacheable: true
                                 }]
                             });
-                        })
+                        }),
+                        done(shouldNotProduceError)
                     );
-                }
+                },
+                done(shouldNotProduceError)
             );
         },
 
@@ -710,9 +737,11 @@ buster.testCase("Resource sets", {
                                     cacheable: true
                                 }]
                             });
-                        })
+                        }),
+                        done(shouldNotProduceError)
                     );
-                }
+                },
+                done(shouldNotProduceError)
             );
         },
 
@@ -734,9 +763,11 @@ buster.testCase("Resource sets", {
                                     backend: "http://localhost:3000/app"
                                 }]
                             });
-                        })
+                        }),
+                        done(shouldNotProduceError)
                     );
-                }
+                },
+                done(shouldNotProduceError)
             );
         },
 
@@ -751,7 +782,8 @@ buster.testCase("Resource sets", {
                             content: "var thisIsTheFoo = 5;"
                         }]
                     });
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -772,7 +804,8 @@ buster.testCase("Resource sets", {
                         combine: ["/buster.js", "/sinon.js"],
                         cacheable: true
                     });
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -792,7 +825,8 @@ buster.testCase("Resource sets", {
                         content: "var helloFromBar = 1;",
                         etag: /^[a-z0-9]+$/
                     }]);
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -816,7 +850,8 @@ buster.testCase("Resource sets", {
                 done(function (serialized) {
                     assert.equals(serialized.resources[0].content, "");
                     assert.equals(serialized.resources[1].content, "");
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -834,7 +869,8 @@ buster.testCase("Resource sets", {
             }).then(
                 done(function (serialized) {
                     assert.equals(serialized.resources.length, 2);
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -853,7 +889,8 @@ buster.testCase("Resource sets", {
                 done(function (serialized) {
                     assert.equals(serialized.resources[0].content, "Ok");
                     assert.equals(serialized.resources[1].content, "Meh");
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -862,13 +899,15 @@ buster.testCase("Resource sets", {
             rs.addResources(["foo.js", "bar.js"]).then(
                 function () {
                     rs.loadPath.append(["foo.js", "bar.js"]);
-                }
+                },
+                done(shouldNotProduceError)
             );
 
             rs.serialize().then(
                 done(function (serialized) {
                     assert.match(serialized.loadPath, ["/foo.js", "/bar.js"]);
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -886,7 +925,8 @@ buster.testCase("Resource sets", {
                             assert.match(err, "Oops");
                         })
                     );
-                }
+                },
+                done(shouldNotProduceError)
             );
         }
     },
@@ -900,7 +940,8 @@ buster.testCase("Resource sets", {
                 function (rs) {
                     assert.defined(rs.get("/buster.js"));
                     assert.content(rs.get("/buster.js"), "Hey mister", done);
-                }
+                },
+                done(shouldNotProduceError)
             );
         },
 
@@ -916,7 +957,8 @@ buster.testCase("Resource sets", {
                     assert.equals(rs.length, 2);
                     assert.defined(rs.get("/buster.js"));
                     assert.defined(rs.get("/buster2.js"));
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -930,7 +972,8 @@ buster.testCase("Resource sets", {
             }] }).then(
                 done(function (rs) {
                     assert.equals(rs.loadPath.paths(), ["/buster.js"]);
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -948,9 +991,11 @@ buster.testCase("Resource sets", {
                                                  rs2.get("/foo.js"), cb);
                             assert.resourceEqual(rs.get("/bar.js"),
                                                  rs2.get("/bar.js"), cb);
-                        }
+                        },
+                        done(shouldNotProduceError)
                     );
-                }
+                },
+                done(shouldNotProduceError)
             );
         },
 
@@ -979,7 +1024,8 @@ buster.testCase("Resource sets", {
                 done(function (rs) {
                     assert.isFalse(rs.get("/buster.js").cacheable);
                     assert.isTrue(rs.get("/sinon.js").cacheable);
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -997,7 +1043,8 @@ buster.testCase("Resource sets", {
                     var alternative = resource.getContentFor("text/uppercase");
                     assert(alternative);
                     assert.content(alternative, "YOYO", done);
-                }
+                },
+                done(shouldNotProduceError)
             );
         }
     },
@@ -1029,7 +1076,8 @@ buster.testCase("Resource sets", {
                     assert.content(rs4.get("/buster.js"), "Ok", cb);
                     assert.content(rs4.get("/sinon.js"), "Nok", cb);
                     assert.content(rs4.get("/when.js"), "when()", cb);
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -1043,7 +1091,8 @@ buster.testCase("Resource sets", {
                 done(function () {
                     var rs3 = rs1.concat(rs2);
                     assert.content(rs3.get("/buster.js"), "Nok", done);
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -1060,7 +1109,8 @@ buster.testCase("Resource sets", {
                     var rs = rs1.concat(rs2);
                     var paths = rs.loadPath.paths();
                     assert.equals(rs.loadPath.paths(), ["/buster.js", "/sinon.js"]);
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -1074,7 +1124,8 @@ buster.testCase("Resource sets", {
                 done(function () {
                     var rs = rs1.concat();
                     assert.equals(rs.get("buster").backend, "localhost:1111");
-                })
+                }),
+                done(shouldNotProduceError)
             );
         },
 
@@ -1090,9 +1141,11 @@ buster.testCase("Resource sets", {
                         done(function (rs) {
                             assert.defined(rs.get("/c"));
                             assert.equals(rs.get("/c").combine, ["/a", "/b"]);
-                        })
+                        }),
+                        done(shouldNotProduceError)
                     );
-                }
+                },
+                done(shouldNotProduceError)
             );
         },
 
@@ -1116,7 +1169,8 @@ buster.testCase("Resource sets", {
                     var rs3 = rs1.concat();
                     var rs4 = rs1.concat(rs2, rs3);
                     assert.equals(rs4.length, 2);
-                })
+                }),
+                done(shouldNotProduceError)
             );
         }
     },
@@ -1126,9 +1180,8 @@ buster.testCase("Resource sets", {
             this.rs = rr.createResourceSet(FIXTURE_DIR);
             var resource = { path: "/buster.js", content: "Ok" };
             this.rs.addResource(resource).then(
-                function () {
-                    done();
-                }
+                done,
+                done(shouldNotProduceError)
             );
         },
 
@@ -1138,7 +1191,7 @@ buster.testCase("Resource sets", {
                 done(function (loadPath) {
                     assert.equals(loadPath.paths(), ["/foo.js"]);
                 }),
-                done
+                done // FIXME
             );
         },
 
@@ -1149,7 +1202,7 @@ buster.testCase("Resource sets", {
                 done(function (lp) {
                     assert.equals(lp.paths(), ["/foo.js", "/bar.js"]);
                 }),
-                done
+                done // FIXME
             );
         },
 
@@ -1173,8 +1226,8 @@ buster.testCase("Resource sets", {
                     var content = "var thisIsTheFoo = 5;";
                     assert.content(rs.get("/foo.js"), content, done);
                 },
-                done
-            ); // TODO: done(shouldNotProduceError)
+                done // FIXME
+            );
         },
 
         "adds non-existing resources": function (done) {
@@ -1186,8 +1239,8 @@ buster.testCase("Resource sets", {
                     assert.content(rs.get("/bar.js"), "var helloFromBar = 1;", cb);
                     assert.content(rs.get("/foo.js"), "var thisIsTheFoo = 5;", cb);
                 },
-                done
-            ); // TODO: done(shouldNotProduceError)
+                done // FIXME
+            );
         },
 
         "does not add duplicate entries": function (done) {
@@ -1198,7 +1251,7 @@ buster.testCase("Resource sets", {
                 done(function (lp) {
                     assert.equals(lp.paths(), ["/foo.js", "/bar.js", "/buster.js"]);
                 }),
-                done // TODO: done(shouldNotProduceError)
+                done // FIXME
             );
         },
 
@@ -1230,9 +1283,8 @@ buster.testCase("Resource sets", {
             this.rs = rr.createResourceSet(FIXTURE_DIR);
             var resource = { path: "/buster.js", content: "Ok" };
             this.rs.addResource(resource).then(
-                function () {
-                    done();
-                }
+                done,
+                done(shouldNotProduceError)
             );
         },
 
@@ -1242,7 +1294,7 @@ buster.testCase("Resource sets", {
                 done(function (loadPath) {
                     assert.equals(loadPath.paths(), ["/foo.js"]);
                 }),
-                done  // TODO: done(shouldNotProduceError)
+                done  // FIXME
             );
         },
 
@@ -1253,7 +1305,7 @@ buster.testCase("Resource sets", {
                 done(function (lp) {
                     assert.equals(lp.paths(), ["/foo.js", "/bar.js"]);
                 }),
-                done // TODO: done(shouldNotProduceError)
+                done // FIXME
             );
         },
 
@@ -1277,7 +1329,7 @@ buster.testCase("Resource sets", {
                     var content = "var thisIsTheFoo = 5;";
                     assert.content(rs.get("/foo.js"), content, done);
                 },
-                done // TODO: done(shouldNotProduceError)
+                done // FIXME
             );
         },
 
@@ -1290,7 +1342,7 @@ buster.testCase("Resource sets", {
                     assert.content(rs.get("/bar.js"), "var helloFromBar = 1;", cb);
                     assert.content(rs.get("/foo.js"), "var thisIsTheFoo = 5;", cb);
                 },
-                done // TODO: done(shouldNotProduceError)
+                done // FIXME
             );
         },
 
@@ -1303,7 +1355,7 @@ buster.testCase("Resource sets", {
                     assert.equals(loadPath.paths(),
                                   ["/bar.js", "/buster.js", "/foo.js"]);
                 }),
-                done // TODO: done(shouldNotProduceError)
+                done // FIXME
             );
         },
 
