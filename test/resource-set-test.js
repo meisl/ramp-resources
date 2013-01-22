@@ -168,7 +168,7 @@ buster.testCase("Resource sets", {
             var resource = this.resource;
             rs.addResource(resource).then(
                 done(function (actualResource) {
-                    assert.equals(resource, actualResource);
+                    assert.equals(actualResource, resource);
                 }),
                 done(shouldNotProduceError)
             );
