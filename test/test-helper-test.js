@@ -50,11 +50,11 @@ buster.testCase("Test helpers", {
         }
     },
 
-    "shouldProduceError": {
+    "shouldReject": {
 
         "with no arg triggers 1 fail": function () {
             this.replaceBustersFail();
-            h.shouldProduceError();
+            h.shouldReject();
             var f = this.restoreBustersFail();
             var m = f.args[0][0];
 
@@ -65,7 +65,7 @@ buster.testCase("Test helpers", {
 
         "with error arg triggers 1 fail and warns about possible misuse": function () {
             this.replaceBustersFail();
-            h.shouldProduceError(new TypeError("Boom!"));
+            h.shouldReject(new TypeError("Boom!"));
             var f = this.restoreBustersFail();
             var m = f.args[0][0];
 
@@ -74,15 +74,15 @@ buster.testCase("Test helpers", {
             assert.match(m, "TypeError", "should mention error type");
             assert.match(m, "Boom!", "should mention error message");
             assert.match(m, "check your test", "should give hint about possible bug in test");
-            assert.match(m, "'shouldNotProduceError'", "should mention its dual function");
+            assert.match(m, "'shouldResolve'", "should mention its dual function");
         }
     },
 
-    "shouldNotProduceError": {
+    "shouldResolve": {
 
         "with no arg triggers 2 fails and warns about possible misuse": function () {
             this.replaceBustersFail();
-            h.shouldNotProduceError();
+            h.shouldResolve();
             var f = this.restoreBustersFail();
             var m0 = f.args[0][0];
             var m1 = f.args[1][0];
@@ -91,7 +91,7 @@ buster.testCase("Test helpers", {
             assert.match(m0, "should not be called", "should give explanation");
             assert.match(m0, "undefined", "should mention actual arg ('undefined')");
             assert.match(m0, "check your test", "should give hint about possible bug in test");
-            assert.match(m0, "'shouldProduceError'", "should mention its dual function");
+            assert.match(m0, "'shouldReject'", "should mention its dual function");
             assert.match(m1, "Should not produce error", "failure message");
         },
 
@@ -99,7 +99,7 @@ buster.testCase("Test helpers", {
             "triggers 1 fail": function () {
                 this.replaceBustersFail();
                 this.replaceBustersLog(); // suppress log output
-                h.shouldNotProduceError(new TypeError("Bang!"));
+                h.shouldResolve(new TypeError("Bang!"));
                 var f = this.restoreBustersFail();
                 var l = this.restoreBustersLog();
                 var m = f.args[0][0];
@@ -114,7 +114,7 @@ buster.testCase("Test helpers", {
                 this.replaceBustersFail();
                 this.replaceBustersLog();
                 var error = new TypeError("Crash!");
-                h.shouldNotProduceError(error);
+                h.shouldResolve(error);
                 var f = this.restoreBustersFail();
                 var l = this.restoreBustersLog();
                 var m = l.args[0][0];

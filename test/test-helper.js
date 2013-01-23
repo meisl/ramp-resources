@@ -70,19 +70,19 @@ B.assertions.add("resourceEqual", {
 
 /* exported functions ------------------------------------------------------ */
 
-function shouldProduceError(err) {
+function shouldReject(err) {
     var msg = "Should produce error";
     if (err) {
-        msg += " [check your test - did you mean 'shouldNotProduceError'?"
+        msg += " [check your test - did you mean 'shouldResolve'?"
                 + " Got " + err + "]";
     }
     B.assertions.fail(msg);
 }
 
-function shouldNotProduceError(err) {
+function shouldResolve(err) {
     assert.defined(err, "error cb should not be called at all"
             + " - but it was, with err==undefined!?"
-            + "[check your test - did you mean 'shouldProduceError'?]");
+            + "[check your test - did you mean 'shouldReject'?]");
     var message = err && (err.stack || err.message);
     if (message) {
         B.log(message);
@@ -160,8 +160,8 @@ function createProxyBackend(port) {
 }
 
 module.exports = {
-    shouldProduceError: shouldProduceError,
-    shouldNotProduceError: shouldNotProduceError,
+    shouldReject: shouldReject,
+    shouldResolve: shouldResolve,
     reqBody: reqBody,
     req: req,
     createServer: createServer,
