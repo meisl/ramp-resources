@@ -72,12 +72,12 @@ B.assertions.add("resourceEqual", {
 /* exported functions ------------------------------------------------------ */
 
 /**
- * Use in tests of promises-based code, to guard the *un*expected code path.
- * Wrap with `done` and drop in as non-error callback if you expect the
+ * Use in tests of promises-based code, to guard the unexpected code path.
+ * Wrap with `done` and drop in as *non-error* callback if you expect the
  * promise to reject.
  * Example:
  *   promise.then(
- *       done(shouldReject),
+ *       done(shouldReject),    // <- non-error callback guard
  *       done(function(err) {
  *           // assert on err
  *       })
@@ -92,20 +92,20 @@ function shouldReject(arg) {
 }
 
 /**
- * Use in tests of promises-based code, to guard the *un*expected code path.
- * Wrap with `done` and drop in as error callback if you expect the
+ * Use in tests of promises-based code, to guard the unexpected code path.
+ * Wrap with `done` and drop in as *error* callback if you expect the
  * promise to resolve.
  * Example:
  *   promise.then(
  *       done(function(val) {
  *           // assert on val
  *       }),
- *       done(shouldResolve)
+ *       done(shouldResolve)    // <- error callback guard
  *   );
  */
 function shouldResolve(err) {
     var msg = "Expected promise to resolve";
-    if (!util.isError(err)) {
+    if (!util.isError(err)) { // possible misuse: maybe we are the non-error-cb?
         msg += " [check your test - did you mean 'shouldReject'?]";
         msg += (arguments.length > 0)
                 ? " Got non-error arg '" + err + "'"
