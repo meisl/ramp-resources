@@ -52,60 +52,89 @@ buster.testCase("Test helpers", {
 
     "shouldReject": {
 
-        "with no arg triggers 1 fail": function () {
+        "with no arg triggers a fail": function () {
             this.replaceBustersFail();
             h.shouldReject();
             var f = this.restoreBustersFail();
-            var m = f.args[0][0];
 
-            assert.calledOnce(f);
-            assert.match(m, "Should produce error", "failure message");
-            assert(true);
+            assert.called(f);
+            var m = f.args[0][0];
+            assert.match(m, /should|expected/i, "failure message");
+            assert.match(m, "reject", "failure message");
         },
 
-        "with error arg triggers 1 fail and warns about possible misuse": function () {
+        "with error arg triggers a fail and warns about possible misuse": function () {
             this.replaceBustersFail();
             h.shouldReject(new TypeError("Boom!"));
             var f = this.restoreBustersFail();
-            var m = f.args[0][0];
 
-            assert.calledOnce(f);
-            assert.match(m, "Should produce error", "failure message");
+            assert.called(f);
+            var m = f.args[0][0];
+            assert.match(m, /should|expected/i, "failure message");
+            assert.match(m, "reject", "failure message");
             assert.match(m, "TypeError", "should mention error type");
             assert.match(m, "Boom!", "should mention error message");
             assert.match(m, "check your test", "should give hint about possible bug in test");
             assert.match(m, "'shouldResolve'", "should mention its dual function");
+        },
+
+        "with non-error arg triggers a fail, WITHOUT possible-misuse-warning": function () {
+            this.replaceBustersFail();
+            h.shouldReject("NotAnError");
+            var f = this.restoreBustersFail();
+
+            assert.called(f);
+            var m = f.args[0][0];
+            assert.match(m, /should|expected/i, "failure message");
+            assert.match(m, "reject", "failure message");
+            refute.match(m, "NotAnError", "should not mention actual arg");
+            refute.match(m, "check your test", "should not give hint about possible bug in test");
+            refute.match(m, "'shouldResolve'", "should not mention its dual function");
         }
     },
 
     "shouldResolve": {
 
-        "with no arg triggers 2 fails and warns about possible misuse": function () {
+        "with no arg triggers a fail and warns about possible misuse": function () {
             this.replaceBustersFail();
             h.shouldResolve();
             var f = this.restoreBustersFail();
-            var m0 = f.args[0][0];
-            var m1 = f.args[1][0];
 
-            assert.calledTwice(f);
-            assert.match(m0, "should not be called", "should give explanation");
-            assert.match(m0, "undefined", "should mention actual arg ('undefined')");
+            assert.called(f);
+            var m0 = f.args[0][0];
+            assert.match(m0, /should|expected/i, "failure message");
+            assert.match(m0, "resolve", "failure message");
             assert.match(m0, "check your test", "should give hint about possible bug in test");
             assert.match(m0, "'shouldReject'", "should mention its dual function");
-            assert.match(m1, "Should not produce error", "failure message");
+            refute.match(m0, "undefined", "should not mention \"virtual\" arg ('undefined')");
+        },
+
+        "with non-error arg triggers a fail and warns about possible misuse": function () {
+            this.replaceBustersFail();
+            h.shouldResolve("NotAnError");
+            var f = this.restoreBustersFail();
+
+            assert.called(f);
+            var m0 = f.args[0][0];
+            assert.match(m0, /should|expected/i, "failure message");
+            assert.match(m0, "resolve", "failure message");
+            assert.match(m0, "check your test", "should give hint about possible bug in test");
+            assert.match(m0, "'shouldReject'", "should mention its dual function");
+            assert.match(m0, "NotAnError", "should mention actual arg");
         },
 
         "with error arg": {
-            "triggers 1 fail": function () {
+            "triggers a fail": function () {
                 this.replaceBustersFail();
                 this.replaceBustersLog(); // suppress log output
                 h.shouldResolve(new TypeError("Bang!"));
                 var f = this.restoreBustersFail();
                 var l = this.restoreBustersLog();
-                var m = f.args[0][0];
 
-                assert.calledOnce(f);
-                assert.match(m, "Should not produce error", "failure message");
+                assert.called(f);
+                var m = f.args[0][0];
+                assert.match(m, /should|expected/i, "failure message");
+                assert.match(m, "resolve", "failure message");
                 assert.match(m, "TypeError", "should mention error type");
                 assert.match(m, "Bang!", "should mention error message");
             },

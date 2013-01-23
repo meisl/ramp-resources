@@ -2,6 +2,7 @@ var B = require("buster");
 var rr = require("../lib/ramp-resources");
 var when = require("when");
 var http = require("http");
+var util = require("util");
 
 /* internal functions ------------------------------------------------------ */
 
@@ -82,11 +83,10 @@ B.assertions.add("resourceEqual", {
  *       })
  *   );
  */
-function shouldReject(err) {
-    var msg = "Should produce error";
-    if (err) {
-        msg += " [check your test - did you mean 'shouldResolve'?"
-             + " Got " + err + "]";
+function shouldReject(arg) {
+    var msg = "Expected promise to reject";
+    if (util.isError(arg)) { // possible misuse: maybe we are the error-cb?
+        msg += " [check your test - did you mean 'shouldResolve'?] Got " + arg;
     }
     B.assertions.fail(msg);
 }
@@ -104,14 +104,20 @@ function shouldReject(err) {
  *   );
  */
 function shouldResolve(err) {
-    assert.defined(err, "error cb should not be called at all"
-            + " - but it was, with err==undefined!?"
-            + "[check your test - did you mean 'shouldReject'?]");
-    var message = err && (err.stack || err.message);
-    if (message) {
-        B.log(message);
+    var msg = "Expected promise to resolve";
+    if (!util.isError(err)) {
+        msg += " [check your test - did you mean 'shouldReject'?]";
+        msg += (arguments.length > 0)
+                ? " Got non-error arg '" + err + "'"
+                : " Got no args";
+    } else {
+        msg += " but yielded " + err;
+        var logMsg = err && (err.stack || err.message);
+        if (logMsg) {
+            B.log(logMsg);
+        }
     }
-    B.assertions.fail("Should not produce error but yielded " + err);
+    B.assertions.fail(msg);
 }
 
 function reqBody(res, encoding, callback) {
