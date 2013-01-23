@@ -70,15 +70,39 @@ B.assertions.add("resourceEqual", {
 
 /* exported functions ------------------------------------------------------ */
 
+/**
+ * Use in tests of promises-based code, to guard the *un*expected code path.
+ * Wrap with `done` and drop in as non-error callback if you expect the
+ * promise to reject.
+ * Example:
+ *   promise.then(
+ *       done(shouldReject),
+ *       done(function(err) {
+ *           // assert on err
+ *       })
+ *   );
+ */
 function shouldReject(err) {
     var msg = "Should produce error";
     if (err) {
         msg += " [check your test - did you mean 'shouldResolve'?"
-                + " Got " + err + "]";
+             + " Got " + err + "]";
     }
     B.assertions.fail(msg);
 }
 
+/**
+ * Use in tests of promises-based code, to guard the *un*expected code path.
+ * Wrap with `done` and drop in as error callback if you expect the
+ * promise to resolve.
+ * Example:
+ *   promise.then(
+ *       done(function(val) {
+ *           // assert on val
+ *       }),
+ *       done(shouldResolve)
+ *   );
+ */
 function shouldResolve(err) {
     assert.defined(err, "error cb should not be called at all"
             + " - but it was, with err==undefined!?"
