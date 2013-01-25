@@ -331,16 +331,15 @@ buster.testCase("Resource sets", {
 
         "fails for file outside root path": function (done) {
             var rs = this.rs;
-            var verify = function (err) { // TODO: use this pattern elsewhere?
-                assert.defined(err);
-                assert.match(err, Path.join("..", "resource-test.js"));
-                assert.match(err, "outside the project root");
-                assert.match(err, "set rootPath to the desired root");
-                assert.match(err, rs.rootPath, "should mention actual root path");
-            };
             rs.addResource("../resource-test.js").then(
                 done(shouldReject),
-                done(verify)
+                done(function (err) {
+                    assert.defined(err);
+                    assert.match(err, Path.join("..", "resource-test.js"));
+                    assert.match(err, "outside the project root");
+                    assert.match(err, "set rootPath to the desired root");
+                    assert.match(err, rs.rootPath, "should mention actual root path");
+                })
             );
         }
     },
