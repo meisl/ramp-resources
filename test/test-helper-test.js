@@ -235,6 +235,67 @@ buster.testCase("Test helpers", {
         }
     },
 
+    "content": {
+
+        setUp: function () {
+            var self = this;
+            self.makeRes = function (actualContent) {
+                return { content: self.spy(function () {
+                    return { then: function (cb) {
+                        cb(actualContent);
+                    } };
+                }) };
+            };
+
+            self.makeDone = function (ourAsserts) {
+                return function (assertsFromFUT) {
+                    // TODO: maybe check that indeed we got 'assertsFromFUT'?
+                    return function () {
+                        assertsFromFUT.apply(this, arguments); // let FUT do its stuff
+                        ourAsserts();
+                    };
+                };
+            };
+        },
+
+        "calls .content() on passed resource": function (done) {
+            var res = this.makeRes(42);
+            var d = this.makeDone(function () {}); // just something
+
+            this.replaceBustersFail(); // not interested here in whether it fails or not
+            assert.content(res, "something", d);
+            this.restoreBustersFail();
+
+            assert.called(res.content);
+            done();
+        },
+
+        "passes if contents are equal": function (done) {
+            var res = this.makeRes(42);
+            var restoreBustersFail = this.restoreBustersFail;
+
+            this.replaceBustersFail();
+            assert.content(res, 42, this.makeDone(function () {
+                var f = restoreBustersFail();
+                refute.called(f);
+                done();
+            }));
+        },
+
+        "fails if contents are not equal": function (done) {
+            var res = this.makeRes(42);
+            var restoreBustersFail = this.restoreBustersFail;
+
+            this.replaceBustersFail();
+            assert.content(res, "not 42", this.makeDone(function () {
+                var f = restoreBustersFail();
+                assert.called(f);
+                done();
+            }));
+        }
+
+    },
+
     "resourceEqual": {
 
         setUp: function () {
