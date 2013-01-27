@@ -41,6 +41,10 @@ function proxyTearDown(done) {
     this.server.tearDown(cb);
 }
 
+function serverTearDown(done) {
+    this.server.tearDown(done);
+}
+
 buster.testCase("Resource middleware", {
     setUp: function () {
         this.sets = createResourceSets();
@@ -52,9 +56,7 @@ buster.testCase("Resource middleware", {
             this.server = h.createServer(this.resources, done);
         },
 
-        tearDown: function (done) {
-            this.server.tearDown(done);
-        },
+        tearDown: serverTearDown,
 
         "arbitrary is not handled": function (done) {
             h.req({ path: "/hey" }, done(function (req, res) {
@@ -107,9 +109,7 @@ buster.testCase("Resource middleware", {
             this.server = h.createServer(this.resources, done);
         },
 
-        tearDown: function (done) {
-            this.server.tearDown(done);
-        },
+        tearDown: serverTearDown,
 
         "arbitrary path is not handled": function (done) {
             h.req({ path: "/arbitrary" }, done(function (req, res) {
@@ -281,9 +281,7 @@ buster.testCase("Resource middleware", {
             this.server = h.createServer(this.resources, done);
         },
 
-        tearDown: function (done) {
-            this.server.tearDown(done);
-        },
+        tearDown: serverTearDown,
 
 
         "serves root resource with loadPath styles": function (done) {
@@ -358,9 +356,7 @@ buster.testCase("Resource middleware", {
             this.server = h.createServer(this.resources, done);
         },
 
-        tearDown: function (done) {
-            this.server.tearDown(done);
-        },
+        tearDown: serverTearDown,
 
         "serves resource": function (done) {
             h.req({
@@ -453,9 +449,7 @@ buster.testCase("Resource middleware", {
             this.server = h.createServer(this.resources, done);
         },
 
-        tearDown: function (done) {
-            this.server.tearDown(done);
-        },
+        tearDown: serverTearDown,
 
         "serves resource from context path": function (done) {
             h.req({ path: "/ctx/1/buster.js" }, done(function (req, res, body) {
@@ -629,9 +623,7 @@ buster.testCase("Resource middleware", {
             this.server = h.createServer(this.resources, done);
         },
 
-        tearDown: function (done) {
-            this.server.tearDown(done);
-        },
+        tearDown: serverTearDown,
 
         "stops serving resource set at path": function (done) {
             this.resources.unmount("/buster");
@@ -744,9 +736,7 @@ buster.testCase("Resource middleware", {
             }.bind(this));
         },
 
-        tearDown: function (done) {
-            this.server.tearDown(done);
-        },
+        tearDown: serverTearDown,
 
         "serves original resource": function (done) {
             h.req({
@@ -796,9 +786,7 @@ buster.testCase("Resource middleware", {
             }.bind(this));
         },
 
-        tearDown: function (done) {
-            this.server.tearDown(done);
-        },
+        tearDown: serverTearDown,
 
         "includes fully qualified resource with script tag": function (done) {
             h.req({
