@@ -1058,14 +1058,14 @@ buster.testCase("Resource sets", {
             var add3 = rs2.addResource({ path: "/when.js", content: "when()" });
 
             when.all([add1, add2, add3]).then(
-                done(function () {
+                function () {
                     var rs4 = rs1.concat(rs2, rs3);
                     var cb = buster.countdown(3, done);
 
                     assert.content(rs4.get("/buster.js"), "Ok", cb);
                     assert.content(rs4.get("/sinon.js"), "Nok", cb);
                     assert.content(rs4.get("/when.js"), "when()", cb);
-                }),
+                },
                 done(shouldResolve)
             );
         },
