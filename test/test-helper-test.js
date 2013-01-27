@@ -234,7 +234,7 @@ buster.testCase("Test helpers", {
         }
     },
 
-    "=>assertions.resourceEqual": {
+    "=>resourceEqual": {
 
         setUp: function () {
             var rs1 = rr.createResourceSet();
@@ -255,10 +255,10 @@ buster.testCase("Test helpers", {
         },
 
 
-        "with resources that differ in path": {
+        "with resources differing in path": {
 
             "fails": function (done) {
-                var doneSpy = this.spy();
+                var doneSpy = this.spy(); // just some function that does nothing
 
                 this.replaceBustersFail();
                 assert.resourceEqual(this.res1a, this.res1b, doneSpy);
@@ -289,7 +289,45 @@ buster.testCase("Test helpers", {
 
         },
 
-        "//fails with resources that differ in content": function (done) {
+        "with resources differing only in content": {
+
+            "fails": function (done) {
+                this.replaceBustersFail();
+                assert.resourceEqual(this.res1a, this.res2a, done);
+                var f = this.restoreBustersFail();
+
+                assert.called(f);
+                var m = f.args[0][0];
+                assert.match(m, /should|expected/i, "failure message");
+                assert.match(m, /to( be)? equal/i, "failure message should require equality");
+
+                // Note: we DO NOT call 'done' ourselves, thereby implicitly requiring
+                //       resourceEquals to do it properly
+            },
+
+            "guards against unexpected promise reject": function (done) {
+                var err = new Error("I'm only here to make the promise reject!");
+                this.res2a.content = function () {
+                    return { then: function() {
+                        throw err;
+                    }};
+                };
+
+                this.replaceBustersFail();
+                this.replaceBustersLog();   // silence log
+                assert.resourceEqual(this.res1a, this.res2a, done);
+                this.restoreBustersLog();
+                var f = this.restoreBustersFail();
+
+                assert.called(f);
+                var m = f.args[0][0];
+                assert.match(m, /(should|expected)(.+)resolve/i, "should report reject");
+                assert.match(m, err.name, "should mention actual error type");
+                assert.match(m, err.message, "should mention actual error message");
+
+                // Note: we DO NOT call 'done' ourselves, thereby implicitly requiring
+                //       resourceEquals to do it properly
+            }
         }
     }
 });
