@@ -65,7 +65,10 @@ B.assertions.add("resourceEqual", {
                  && res1.etag === res2.etag
                  && res1.encoding === res2.encoding
                  && B.assertions.deepEqual(res1.headers(), res2.headers());
-        if (!equal) { return false; }
+        if (!equal) {
+            done();
+            return false;
+        }
 
         when.all([res1.content(), res2.content()]).then(
             done(function (contents) {
@@ -74,7 +77,7 @@ B.assertions.add("resourceEqual", {
         );
         return true;
     },
-    assertMessage: "Expected resources ${0} and ${1} to be the same"
+    assertMessage: "Expected resources ${0} and ${1} to be equal"
 });
 
 /* exported functions ------------------------------------------------------ */
