@@ -73,7 +73,8 @@ B.assertions.add("resourceEqual", {
         when.all([res1.content(), res2.content()]).then(
             done(function (contents) {
                 assert.equals(contents[0], contents[1]);
-            })
+            }),
+            done(shouldResolve)
         );
         return true;
     },

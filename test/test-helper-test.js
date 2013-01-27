@@ -234,7 +234,7 @@ buster.testCase("Test helpers", {
         }
     },
 
-    "=>resourceEqual": {
+    "resourceEqual": {
 
         setUp: function () {
             var rs1 = rr.createResourceSet();
