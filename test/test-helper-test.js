@@ -235,14 +235,28 @@ buster.testCase("Test helpers", {
         }
     },
 
-    "content": {
+    "assert.content": {
 
         setUp: function () {
             var self = this;
-            self.makeRes = function (actualContent) {
+            self.makeRes = function (actualContent, err) {
+                var isToReject = arguments.length > 1; // allows for rejecting with 'undefined'
                 return { content: self.spy(function () {
-                    return { then: function (cb) {
-                        cb(actualContent);
+                    return { then: function (cb, ecb) {
+                        if (isToReject) {
+                            if (!ecb || ((typeof ecb) !== "function")) {
+                                self.restoreBustersFail(); // make sure we see the failure -v
+                                assert.isFunction(ecb, "should have provided error callback");
+                            } else {
+                                ecb(err);
+                            }
+                        } else {
+                            if (!cb || ((typeof cb) !== "function")) {
+                                self.restoreBustersFail(); // make sure we see the failure -v
+                                assert.isFunction(cb, "should have provided error callback");
+                            }
+                            cb(actualContent);
+                        }
                     } };
                 }) };
             };
@@ -292,11 +306,34 @@ buster.testCase("Test helpers", {
                 assert.called(f);
                 done();
             }));
+        },
+
+        "guards against unexpected promise reject": function (done) {
+            var restoreBustersLog = this.restoreBustersLog;
+            var restoreBustersFail = this.restoreBustersFail;
+            var err = new Error("I'm only here to make the promise reject!");
+            var res = this.makeRes(42, err);
+
+            this.replaceBustersFail();
+            this.replaceBustersLog(); // silence log; shouldResolve
+            assert.content(res, 42, this.makeDone(function () {
+                restoreBustersLog();
+                var f = restoreBustersFail();
+                assert.called(f); // TODO: too bad we can't pass a message to .called(..)...!
+                var m = f.args[0][0];
+                assert.match(m, /(should|expected)[^'\[]+resolve/i,
+                    "should report reject as UNEXPECTED");
+                refute.match(m, "check your test", "should not use wrong guard");
+                refute.match(m, "'shouldResolve'", "should not use wrong guard");
+                assert.match(m, err.name, "should mention actual error type");
+                assert.match(m, err.message, "should mention actual error message");
+                done();
+            }));
         }
 
     },
 
-    "resourceEqual": {
+    "assert.resourceEqual": {
 
         setUp: function () {
             var rs1 = rr.createResourceSet();
@@ -383,7 +420,10 @@ buster.testCase("Test helpers", {
 
                 assert.called(f);
                 var m = f.args[0][0];
-                assert.match(m, /(should|expected)(.+)resolve/i, "should report reject");
+                assert.match(m, /(should|expected)[^'\[]+resolve/i,
+                    "should report reject as UNEXPECTED");
+                refute.match(m, "check your test", "should not use wrong guard");
+                refute.match(m, "'shouldResolve'", "should not use wrong guard");
                 assert.match(m, err.name, "should mention actual error type");
                 assert.match(m, err.message, "should mention actual error message");
 
