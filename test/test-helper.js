@@ -171,11 +171,8 @@ B.assertions.add("content", {
         resource.content().then(
             done(function (actual) {
                 assert.same(actual, expected);
-            })
-            //, function() {}   // will timeout
-            //, done(function() { B.assertions.fail()}) // won't yield proper message
-            //, done(shouldReject) // wrong guard used
-            , done(shouldResolve) // correct
+            }),
+            done(shouldResolve)
         );
         return true;
     }
