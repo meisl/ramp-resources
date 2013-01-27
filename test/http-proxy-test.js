@@ -1,27 +1,23 @@
 var buster = require("buster");
-var http = require("http");
 var httpProxy = require("../lib/http-proxy");
 var h = require("./test-helper");
 
 buster.testCase("HTTP proxy", {
     setUp: function (done) {
         var self = this;
-        this.proxyMiddleware = httpProxy.create("localhost", 2222);
-
-        this.proxy = http.createServer(function (req, res) {
-            self.proxyMiddleware.respond(req, res);
-        });
-
         var cb = buster.countdown(2, done);
+
+        this.proxyMiddleware = httpProxy.create("localhost", 2222);
+        this.proxy = h.createServer(function (req, res) {
+            self.proxyMiddleware.respond(req, res);
+        }, cb);
         this.backend = h.createProxyBackend(2222, cb);
-        this.proxy.listen(2233, cb);
     },
 
     tearDown: function (done) {
         var cb = buster.countdown(2, done);
         this.backend.tearDown(cb);
-        this.proxy.on("close", cb);
-        this.proxy.close();
+        this.proxy.tearDown(cb);
     },
 
     "incoming requests": {

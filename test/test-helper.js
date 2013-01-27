@@ -96,12 +96,14 @@ function req(opt, callback) {
 }
 
 function createServer(middleware, done) {
-    var server = http.createServer(function (req, res) {
-        if (!middleware.respond(req, res)) {
-            res.writeHead(418);
-            res.end("Short and stout");
-        }
-    });
+    var server = http.createServer((typeof middleware) === "function"
+        ? middleware
+        : function (req, res) {
+            if (!middleware.respond(req, res)) {
+                res.writeHead(418);
+                res.end("Short and stout");
+            }
+        });
     server.tearDown = function (done) { // to be called in tearDown
         server.on("close", done);
         server.close();
@@ -122,7 +124,6 @@ function createProxyBackend(port, done) {
             });
         }
     });
-    server.listen(port, done);
 
     backend.tearDown = function (done) { // to be called in tearDown
         var i, l;
@@ -135,6 +136,7 @@ function createProxyBackend(port, done) {
         server.close();
     };
 
+    server.listen(port, done);
     return backend;
 }
 
