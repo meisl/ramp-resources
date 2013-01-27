@@ -1,5 +1,7 @@
 /*jslint maxlen:100*/
 var buster = require("buster");
+var rr = require("../lib/ramp-resources");
+
 var h = require("./test-helper.js");
 
 buster.testCase("Test helpers", {
@@ -229,6 +231,23 @@ buster.testCase("Test helpers", {
                 refute.match(m, "check your test", "should NOT give hint about possible test bug");
                 refute.match(m, "'shouldReject'", "should NOT mention its dual function");
             }
+        }
+    },
+
+    "resourceEqual": {
+
+        setUp: function () {
+            var rs = rr.createResourceSet();
+
+            // TODO: why ain't addResource*s* working?
+            rs.addResource({ path: "/foo", content: "da foo" });
+            rs.addResource({ path: "/bar", content: "da bar" });
+            this.res1 = rs.get("/foo");
+            this.res2 = rs.get("/bar");
+        },
+
+        "passes with equal resources": function (done) {
+            assert.resourceEqual(this.res1, this.res1, done);
         }
     }
 });
