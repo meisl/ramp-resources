@@ -95,7 +95,6 @@ function req(opt, callback) {
     return resultReq;
 }
 
-// maybe rename to serverSetUp? there's serverTearDown, at last
 function createServer(middleware, done) {
     var server = http.createServer(function (req, res) {
         if (!middleware.respond(req, res)) {
@@ -103,17 +102,16 @@ function createServer(middleware, done) {
             res.end("Short and stout");
         }
     });
+    server.tearDown = function (done) { // to be called in tearDown
+        server.on("close", done);
+        server.close();
+    };
+
     server.listen(2233, done);
     return server;
 }
 
-function serverTearDown(done) {
-    this.server.on("close", done);
-    this.server.close();
-}
-
-// would be nicer to have it just like createServer / serverTearDown
-function createProxyBackend(port) {
+function createProxyBackend(port, done) {
     var backend = { requests: [] };
 
     var server = http.createServer(function (req, res) {
@@ -124,9 +122,9 @@ function createProxyBackend(port) {
             });
         }
     });
-    server.listen(port);
+    server.listen(port, done);
 
-    backend.close = function (done) { // to be called in tearDown
+    backend.tearDown = function (done) { // to be called in tearDown
         var i, l;
         for (i = 0, l = backend.requests.length; i < l; ++i) {
             if (!backend.requests[i].res.ended) {
@@ -206,6 +204,5 @@ module.exports = {
     reqBody: reqBody,
     req: req,
     createServer: createServer,
-    serverTearDown: serverTearDown,
     createProxyBackend: createProxyBackend
 };

@@ -12,13 +12,14 @@ buster.testCase("HTTP proxy", {
             self.proxyMiddleware.respond(req, res);
         });
 
-        this.backend = h.createProxyBackend(2222);
-        this.proxy.listen(2233, done);
+        var cb = buster.countdown(2, done);
+        this.backend = h.createProxyBackend(2222, cb);
+        this.proxy.listen(2233, cb);
     },
 
     tearDown: function (done) {
         var cb = buster.countdown(2, done);
-        this.backend.close(cb);
+        this.backend.tearDown(cb);
         this.proxy.on("close", cb);
         this.proxy.close();
     },
