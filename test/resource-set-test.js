@@ -115,8 +115,6 @@ buster.testCase("Resource sets", {
                     rs.addProcessor(function (resource, content) {
                         return content + "!";
                     });
-                    // TODO: maybe better move the rs.get(..) outside .then()?
-                    //       e.g. rs.get("/xxx") times out instead of ReferenceError
                     rs.get("/buster.js").content().then(
                         done(function (c) {
                             assert.equals(c, "Ok!");
@@ -138,8 +136,6 @@ buster.testCase("Resource sets", {
                 { path: "/buster.js", content: "Ok" }
             ).then(
                 function () {
-                    // TODO: maybe better move the rs.get(..) outside .then()?
-                    //       e.g. rs.get("/xxx") times out instead of ReferenceError
                     rs.get("/buster.js").content().then(
                         done(function (c) {
                             assert.equals(c, "Ok!");
@@ -331,16 +327,15 @@ buster.testCase("Resource sets", {
 
         "fails for file outside root path": function (done) {
             var rs = this.rs;
-            var verify = function (err) { // TODO: use this pattern elsewhere?
-                assert.defined(err);
-                assert.match(err, Path.join("..", "resource-test.js"));
-                assert.match(err, "outside the project root");
-                assert.match(err, "set rootPath to the desired root");
-                assert.match(err, rs.rootPath, "should mention actual root path");
-            };
             rs.addResource("../resource-test.js").then(
                 done(shouldReject),
-                done(verify)
+                done(function (err) {
+                    assert.defined(err);
+                    assert.match(err, Path.join("..", "resource-test.js"));
+                    assert.match(err, "outside the project root");
+                    assert.match(err, "set rootPath to the desired root");
+                    assert.match(err, rs.rootPath, "should mention actual root path");
+                })
             );
         }
     },
@@ -449,11 +444,11 @@ buster.testCase("Resource sets", {
                         return "function () {" + content + "}";
                     });
                     rs.concat().then(
-                        done(function (actualRs) { // TODO: isn't that done 2x?!
+                        function (actualRs) {
                             var concat = "function () {var thisIsTheFoo = 5;}";
                             var resource = actualRs.get("/buster.js");
-                            assert.content(resource, concat, done); // <-----^
-                        }),
+                            assert.content(resource, concat, done);
+                        },
                         done(shouldResolve)
                     );
                 },
@@ -1063,14 +1058,14 @@ buster.testCase("Resource sets", {
             var add3 = rs2.addResource({ path: "/when.js", content: "when()" });
 
             when.all([add1, add2, add3]).then(
-                done(function () {
+                function () {
                     var rs4 = rs1.concat(rs2, rs3);
                     var cb = buster.countdown(3, done);
 
                     assert.content(rs4.get("/buster.js"), "Ok", cb);
                     assert.content(rs4.get("/sinon.js"), "Nok", cb);
                     assert.content(rs4.get("/when.js"), "when()", cb);
-                }),
+                },
                 done(shouldResolve)
             );
         },

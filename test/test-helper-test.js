@@ -1,5 +1,8 @@
 /*jslint maxlen:100*/
+/*jslint regexp:true*/ // allow . and [^...] in regexps
 var buster = require("buster");
+var rr = require("../lib/ramp-resources");
+
 var h = require("./test-helper.js");
 
 buster.testCase("Test helpers", {
@@ -228,6 +231,204 @@ buster.testCase("Test helpers", {
                 var m = f.args[0][0];
                 refute.match(m, "check your test", "should NOT give hint about possible test bug");
                 refute.match(m, "'shouldReject'", "should NOT mention its dual function");
+            }
+        }
+    },
+
+    "assert.content": {
+
+        setUp: function () {
+            var self = this;
+            self.makeRes = function (actualContent, err) {
+                var isToReject = arguments.length > 1; // allows for rejecting with 'undefined'
+                return { content: self.spy(function () {
+                    return { then: function (cb, ecb) {
+                        if (isToReject) {
+                            if (!ecb || ((typeof ecb) !== "function")) {
+                                self.restoreBustersFail(); // make sure we see the failure -v
+                                assert.isFunction(ecb, "should have provided error callback");
+                            } else {
+                                ecb(err);
+                            }
+                        } else {
+                            if (!cb || ((typeof cb) !== "function")) {
+                                self.restoreBustersFail(); // make sure we see the failure -v
+                                assert.isFunction(cb, "should have provided error callback");
+                            }
+                            cb(actualContent);
+                        }
+                    } };
+                }) };
+            };
+
+            self.makeDone = function (ourAsserts) {
+                return function (assertsFromFUT) {
+                    // TODO: maybe check that indeed we got 'assertsFromFUT'?
+                    return function () {
+                        assertsFromFUT.apply(this, arguments); // let FUT do its stuff
+                        ourAsserts();
+                    };
+                };
+            };
+        },
+
+        "calls .content() on passed resource": function (done) {
+            var res = this.makeRes(42);
+            var d = this.makeDone(function () {}); // just something
+
+            this.replaceBustersFail(); // not interested here in whether it fails or not
+            assert.content(res, "something", d);
+            this.restoreBustersFail();
+
+            assert.called(res.content);
+            done();
+        },
+
+        "passes if contents are equal": function (done) {
+            var res = this.makeRes(42);
+            var restoreBustersFail = this.restoreBustersFail;
+
+            this.replaceBustersFail();
+            assert.content(res, 42, this.makeDone(function () {
+                var f = restoreBustersFail();
+                refute.called(f);
+                done();
+            }));
+        },
+
+        "fails if contents are not equal": function (done) {
+            var res = this.makeRes(42);
+            var restoreBustersFail = this.restoreBustersFail;
+
+            this.replaceBustersFail();
+            assert.content(res, "not 42", this.makeDone(function () {
+                var f = restoreBustersFail();
+                assert.called(f);
+                done();
+            }));
+        },
+
+        "guards against unexpected promise reject with 'done(shouldResolve)'": function (done) {
+            var restoreBustersLog = this.restoreBustersLog;
+            var restoreBustersFail = this.restoreBustersFail;
+            var err = new Error("I'm only here to make the promise reject!");
+            var res = this.makeRes(42, err);
+
+            this.replaceBustersFail();
+            this.replaceBustersLog(); // silence log; shouldResolve
+            assert.content(res, 42, this.makeDone(function () {
+                restoreBustersLog();
+                var f = restoreBustersFail();
+                assert.called(f); // TODO: too bad we can't pass a message to .called(..)...!
+                var m = f.args[0][0];
+                assert.match(m, /(should|expected)[^'\[]+resolve/i,
+                    "should report reject as UNEXPECTED");
+                refute.match(m, "check your test", "should not use wrong guard");
+                refute.match(m, "'shouldResolve'", "should not use wrong guard");
+                assert.match(m, err.name, "should mention actual error type");
+                assert.match(m, err.message, "should mention actual error message");
+                done();
+            }));
+        }
+
+    },
+
+    "assert.resourceEqual": {
+
+        setUp: function () {
+            var rs1 = rr.createResourceSet();
+            // TODO: why ain't addResource*s* working?
+            rs1.addResource({ path: "/foo", content: "da foo" });
+            rs1.addResource({ path: "/bar", content: "da bar" });
+            this.res1a = rs1.get("/foo");
+            this.res1b = rs1.get("/bar");
+
+            var rs2 = rr.createResourceSet();
+            rs2.addResource({ path: "/foo", content: "other foo" });
+            this.res2a = rs2.get("/foo");
+        },
+
+        "passes with equal resources": function (done) {
+            assert.resourceEqual(this.res1a, this.res1a, done);
+            // this also tests if resourceEquals calls 'done', as we don't here
+        },
+
+
+        "with resources differing in path": {
+
+            "fails": function (done) {
+                var doneSpy = this.spy(); // just some function that does nothing
+
+                this.replaceBustersFail();
+                assert.resourceEqual(this.res1a, this.res1b, doneSpy);
+                var f = this.restoreBustersFail();
+
+                assert.called(f);
+                var m = f.args[0][0];
+                assert.match(m, /should|expected/i, "failure message");
+                assert.match(m, /to( be)? equal/i, "failure message should require equality");
+                done();
+            },
+
+            // This test is a little too specific w.r.t the use of 'done' in that
+            // it prescribes how *exactly* it's being used: as `done()`.
+            // However, more important than full generality is to test that the
+            // the async test callback is indeed called to indicate end of test.
+            "calls its 'done' arg": function (done) {
+                var doneSpy = this.spy();
+
+                this.replaceBustersFail();
+                assert.resourceEqual(this.res1a, this.res1b, doneSpy);
+                this.restoreBustersFail();
+
+                assert.equals(doneSpy.callCount, 1, "should have called its 'done' exactly once");
+                assert.equals(doneSpy.args[0], [], "should have called its 'done' without args");
+                done();
+            }
+
+        },
+
+        "with resources differing only in content": {
+
+            "fails": function (done) {
+                this.replaceBustersFail();
+                assert.resourceEqual(this.res1a, this.res2a, done);
+                var f = this.restoreBustersFail();
+
+                assert.called(f);
+                var m = f.args[0][0];
+                assert.match(m, /should|expected/i, "failure message");
+                assert.match(m, /to( be)? equal/i, "failure message should require equality");
+
+                // Note: we DO NOT call 'done' ourselves, thereby implicitly requiring
+                //       resourceEquals to do it properly
+            },
+
+            "guards against unexpected promise reject 'done(shouldResolve)'": function (done) {
+                var err = new Error("I'm only here to make the promise reject!");
+                this.res2a.content = function () {
+                    return { then: function () {
+                        throw err;
+                    }};
+                };
+
+                this.replaceBustersFail();
+                this.replaceBustersLog();   // silence log
+                assert.resourceEqual(this.res1a, this.res2a, done);
+                this.restoreBustersLog();
+                var f = this.restoreBustersFail();
+
+                assert.called(f);
+                var m = f.args[0][0];
+                assert.match(m, /(should|expected)[^'\[]+resolve/i,
+                    "should report reject as UNEXPECTED");
+                refute.match(m, "check your test", "should not use wrong guard");
+                refute.match(m, "'shouldResolve'", "should not use wrong guard");
+                assert.match(m, err.name, "should mention actual error type");
+                assert.match(m, err.message, "should mention actual error message");
+
+                // Note: we DO NOT call 'done' ourselves, thereby implicitly requiring
+                //       resourceEquals to do it properly
             }
         }
     }

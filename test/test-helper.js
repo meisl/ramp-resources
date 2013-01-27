@@ -18,66 +18,6 @@ function verifyResourceError(message, e) {
     return true;
 }
 
-/* additional assertions on buster object ---------------------------------- */
-
-B.assertions.add("invalidResource", {
-    assert: function (path, res, message) {
-        var ret;
-        try {
-            if (typeof path === "string") {
-                rr.createResource(path, res);
-                ret = false;
-            } else {
-                path.addResource(res).then(
-                    function () {},
-                    function (err) {
-                        ret = verifyResourceError(message, err);
-                    }
-                );
-                return ret;
-            }
-        } catch (e) {
-            ret = verifyResourceError(message, e);
-        }
-        return ret;
-    },
-    assertMessage: "Expected to fail"
-});
-
-B.assertions.add("content", {
-    assert: function (resource, expected, done) {
-        resource.content().then(
-            done(function (actual) {
-                assert.same(actual, expected);
-                // why doesn't B.assertions.same work?
-            }),
-            done(function (err) {
-                buster.log(err.stack);
-                B.assertions.fail("content() rejected");
-            })
-        );
-        return true;
-    }
-});
-
-B.assertions.add("resourceEqual", {
-    assert: function (res1, res2, done) {
-        var equal = res1.path === res2.path &&
-            res1.etag === res2.etag &&
-            res1.encoding === res2.encoding &&
-            B.assertions.deepEqual(res1.headers(), res2.headers());
-        if (!equal) { return false; }
-
-        when.all([res1.content(), res2.content()]).then(
-            done(function (contents) {
-                B.assertions.equals(contents[0], contents[1]);
-            })
-        );
-        return true;
-    },
-    assertMessage: "Expected resources ${0} and ${1} to be the same"
-});
-
 /* exported functions ------------------------------------------------------ */
 
 /**
@@ -155,25 +95,25 @@ function req(opt, callback) {
     return resultReq;
 }
 
-// maybe rename to serverSetUp? there's serverTearDown, at last
 function createServer(middleware, done) {
-    var server = http.createServer(function (req, res) {
-        if (!middleware.respond(req, res)) {
-            res.writeHead(418);
-            res.end("Short and stout");
-        }
-    });
+    var server = http.createServer((typeof middleware) === "function"
+        ? middleware
+        : function (req, res) {
+            if (!middleware.respond(req, res)) {
+                res.writeHead(418);
+                res.end("Short and stout");
+            }
+        });
+    server.tearDown = function (done) { // to be called in tearDown
+        server.on("close", done);
+        server.close();
+    };
+
     server.listen(2233, done);
     return server;
 }
 
-function serverTearDown(done) {
-    this.server.on("close", done);
-    this.server.close();
-}
-
-// would be nicer to have it just like createServer / serverTearDown
-function createProxyBackend(port) {
+function createProxyBackend(port, done) {
     var backend = { requests: [] };
 
     var server = http.createServer(function (req, res) {
@@ -184,9 +124,8 @@ function createProxyBackend(port) {
             });
         }
     });
-    server.listen(port);
 
-    backend.close = function (done) { // to be called in tearDown
+    backend.tearDown = function (done) { // to be called in tearDown
         var i, l;
         for (i = 0, l = backend.requests.length; i < l; ++i) {
             if (!backend.requests[i].res.ended) {
@@ -197,8 +136,69 @@ function createProxyBackend(port) {
         server.close();
     };
 
+    server.listen(port, done);
     return backend;
 }
+
+/* additional assertions on buster object ---------------------------------- */
+
+B.assertions.add("invalidResource", {
+    assert: function (path, res, message) {
+        var ret;
+        try {
+            if (typeof path === "string") {
+                rr.createResource(path, res);
+                ret = false;
+            } else {
+                path.addResource(res).then(
+                    function () {},
+                    function (err) {
+                        ret = verifyResourceError(message, err);
+                    }
+                );
+                return ret;
+            }
+        } catch (e) {
+            ret = verifyResourceError(message, e);
+        }
+        return ret;
+    },
+    assertMessage: "Expected to fail"
+});
+
+B.assertions.add("content", {
+    assert: function (resource, expected, done) {
+        resource.content().then(
+            done(function (actual) {
+                assert.same(actual, expected);
+            }),
+            done(shouldResolve)
+        );
+        return true;
+    }
+});
+
+B.assertions.add("resourceEqual", {
+    assert: function (res1, res2, done) {
+        var equal = res1.path === res2.path
+                 && res1.etag === res2.etag
+                 && res1.encoding === res2.encoding
+                 && B.assertions.deepEqual(res1.headers(), res2.headers());
+        if (!equal) {
+            done();
+            return false;
+        }
+
+        when.all([res1.content(), res2.content()]).then(
+            done(function (contents) {
+                assert.equals(contents[0], contents[1]);
+            }),
+            done(shouldResolve)
+        );
+        return true;
+    },
+    assertMessage: "Expected resources ${0} and ${1} to be equal"
+});
 
 module.exports = {
     shouldReject: shouldReject,
@@ -206,6 +206,5 @@ module.exports = {
     reqBody: reqBody,
     req: req,
     createServer: createServer,
-    serverTearDown: serverTearDown,
     createProxyBackend: createProxyBackend
 };
