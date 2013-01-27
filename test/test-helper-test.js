@@ -1,4 +1,5 @@
 /*jslint maxlen:100*/
+/*jslint regexp:true*/ // allow . and [^...] in regexps
 var buster = require("buster");
 var rr = require("../lib/ramp-resources");
 
@@ -308,7 +309,7 @@ buster.testCase("Test helpers", {
             "guards against unexpected promise reject": function (done) {
                 var err = new Error("I'm only here to make the promise reject!");
                 this.res2a.content = function () {
-                    return { then: function() {
+                    return { then: function () {
                         throw err;
                     }};
                 };
