@@ -115,8 +115,6 @@ buster.testCase("Resource sets", {
                     rs.addProcessor(function (resource, content) {
                         return content + "!";
                     });
-                    // TODO: maybe better move the rs.get(..) outside .then()?
-                    //       e.g. rs.get("/xxx") times out instead of ReferenceError
                     rs.get("/buster.js").content().then(
                         done(function (c) {
                             assert.equals(c, "Ok!");
@@ -138,8 +136,6 @@ buster.testCase("Resource sets", {
                 { path: "/buster.js", content: "Ok" }
             ).then(
                 function () {
-                    // TODO: maybe better move the rs.get(..) outside .then()?
-                    //       e.g. rs.get("/xxx") times out instead of ReferenceError
                     rs.get("/buster.js").content().then(
                         done(function (c) {
                             assert.equals(c, "Ok!");
