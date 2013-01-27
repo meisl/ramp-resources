@@ -448,11 +448,11 @@ buster.testCase("Resource sets", {
                         return "function () {" + content + "}";
                     });
                     rs.concat().then(
-                        done(function (actualRs) { // TODO: isn't that done 2x?!
+                        function (actualRs) {
                             var concat = "function () {var thisIsTheFoo = 5;}";
                             var resource = actualRs.get("/buster.js");
-                            assert.content(resource, concat, done); // <-----^
-                        }),
+                            assert.content(resource, concat, done);
+                        },
                         done(shouldResolve)
                     );
                 },
