@@ -234,20 +234,45 @@ buster.testCase("Test helpers", {
         }
     },
 
-    "resourceEqual": {
+    "=>assertions.resourceEqual": {
 
         setUp: function () {
-            var rs = rr.createResourceSet();
-
+            var rs1 = rr.createResourceSet();
             // TODO: why ain't addResource*s* working?
-            rs.addResource({ path: "/foo", content: "da foo" });
-            rs.addResource({ path: "/bar", content: "da bar" });
-            this.res1 = rs.get("/foo");
-            this.res2 = rs.get("/bar");
+            rs1.addResource({ path: "/foo", content: "da foo" });
+            rs1.addResource({ path: "/bar", content: "da bar" });
+            this.res1a = rs1.get("/foo");
+            this.res1b = rs1.get("/bar");
+
+            var rs2 = rr.createResourceSet();
+            rs2.addResource({ path: "/foo", content: "other foo" });
+            this.res2a = rs2.get("/foo");
         },
 
         "passes with equal resources": function (done) {
-            assert.resourceEqual(this.res1, this.res1, done);
+            assert.resourceEqual(this.res1a, this.res1a, done);
+            // this also tests if resourceEquals calls 'done', as we don't here
+        },
+
+        // This test is a little too specific w.r.t the use of 'done' in that
+        // it prescribes how exactly it's being used: as `done()`.
+        // However, more important than full generality is to test that the
+        // the async test callback is indeed called to indicate end of test.
+        "fails with resources that differ in path": function (done) {
+            var restoreBustersFail = this.restoreBustersFail;
+            var doneSpy = this.spy();
+
+            this.replaceBustersFail();
+            assert.resourceEqual(this.res1a, this.res1b, doneSpy);
+            var f = restoreBustersFail();
+
+            assert.called(f);
+            var m = f.args[0][0];
+            assert.match(m, /should|expected/i, "failure message");
+            assert.match(m, /to( be)? equal/i, "failure message should require equality");
+            assert.equals(doneSpy.callCount, 1, "should have called its 'done' exactly once");
+            assert.equals(doneSpy.args[0], [], "should have called its 'done' without args");
+            done();
         }
     }
 });
