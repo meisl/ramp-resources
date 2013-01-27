@@ -5,19 +5,19 @@ var h = require("./test-helper");
 buster.testCase("HTTP proxy", {
     setUp: function (done) {
         var self = this;
-        var cb = buster.countdown(2, done);
+        done = buster.countdown(2, done);
 
         this.proxyMiddleware = httpProxy.create("localhost", 2222);
         this.proxy = h.createServer(function (req, res) {
             self.proxyMiddleware.respond(req, res);
-        }, cb);
-        this.backend = h.createProxyBackend(2222, cb);
+        }, done);
+        this.backend = h.createProxyBackend(2222, done);
     },
 
     tearDown: function (done) {
-        var cb = buster.countdown(2, done);
-        this.backend.tearDown(cb);
-        this.proxy.tearDown(cb);
+        done = buster.countdown(2, done);
+        this.backend.tearDown(done);
+        this.proxy.tearDown(done);
     },
 
     "incoming requests": {

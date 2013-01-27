@@ -24,21 +24,22 @@ function createResourceSets() {
 
 function proxySetUp(options) {
     return function (done) {
-        var cb = buster.countdown(2, done);
+        done = buster.countdown(2, done);
 
-        this.backend = h.createProxyBackend(2222, cb);
-        this.resources = rr.createMiddleware();
+        this.backend = h.createProxyBackend(2222, done);
+
         this.rs = rr.createResourceSet();
         this.rs.addResource({ path: options.path, backend: options.backend });
+        this.resources = rr.createMiddleware();
         this.resources.mount(options.mountPoint, this.rs);
-        this.server = h.createServer(this.resources, cb);
+        this.server = h.createServer(this.resources, done);
     };
 }
 
 function proxyTearDown(done) {
-    var cb = buster.countdown(2, done);
-    this.backend.tearDown(cb);
-    this.server.tearDown(cb);
+    done = buster.countdown(2, done);
+    this.backend.tearDown(done);
+    this.server.tearDown(done);
 }
 
 function serverTearDown(done) {
