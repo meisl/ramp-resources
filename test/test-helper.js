@@ -171,11 +171,11 @@ B.assertions.add("content", {
         resource.content().then(
             done(function (actual) {
                 assert.same(actual, expected);
-            }),
-            done(function (err) {
-                buster.log(err.stack);
-                B.assertions.fail("content() rejected");
             })
+            //, function() {}   // will timeout
+            //, done(function() { B.assertions.fail()}) // won't yield proper message
+            //, done(shouldReject) // wrong guard used
+            , done(shouldResolve) // correct
         );
         return true;
     }

@@ -308,7 +308,7 @@ buster.testCase("Test helpers", {
             }));
         },
 
-        "guards against unexpected promise reject": function (done) {
+        "guards against unexpected promise reject with 'done(shouldResolve)'": function (done) {
             var restoreBustersLog = this.restoreBustersLog;
             var restoreBustersFail = this.restoreBustersFail;
             var err = new Error("I'm only here to make the promise reject!");
@@ -404,7 +404,7 @@ buster.testCase("Test helpers", {
                 //       resourceEquals to do it properly
             },
 
-            "guards against unexpected promise reject": function (done) {
+            "guards against unexpected promise reject 'done(shouldResolve)'": function (done) {
                 var err = new Error("I'm only here to make the promise reject!");
                 this.res2a.content = function () {
                     return { then: function () {
