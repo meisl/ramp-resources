@@ -254,25 +254,42 @@ buster.testCase("Test helpers", {
             // this also tests if resourceEquals calls 'done', as we don't here
         },
 
-        // This test is a little too specific w.r.t the use of 'done' in that
-        // it prescribes how exactly it's being used: as `done()`.
-        // However, more important than full generality is to test that the
-        // the async test callback is indeed called to indicate end of test.
-        "fails with resources that differ in path": function (done) {
-            var restoreBustersFail = this.restoreBustersFail;
-            var doneSpy = this.spy();
 
-            this.replaceBustersFail();
-            assert.resourceEqual(this.res1a, this.res1b, doneSpy);
-            var f = restoreBustersFail();
+        "with resources that differ in path": {
 
-            assert.called(f);
-            var m = f.args[0][0];
-            assert.match(m, /should|expected/i, "failure message");
-            assert.match(m, /to( be)? equal/i, "failure message should require equality");
-            assert.equals(doneSpy.callCount, 1, "should have called its 'done' exactly once");
-            assert.equals(doneSpy.args[0], [], "should have called its 'done' without args");
-            done();
+            "fails": function (done) {
+                var doneSpy = this.spy();
+
+                this.replaceBustersFail();
+                assert.resourceEqual(this.res1a, this.res1b, doneSpy);
+                var f = this.restoreBustersFail();
+
+                assert.called(f);
+                var m = f.args[0][0];
+                assert.match(m, /should|expected/i, "failure message");
+                assert.match(m, /to( be)? equal/i, "failure message should require equality");
+                done();
+            },
+
+            // This test is a little too specific w.r.t the use of 'done' in that
+            // it prescribes how *exactly* it's being used: as `done()`.
+            // However, more important than full generality is to test that the
+            // the async test callback is indeed called to indicate end of test.
+            "calls its 'done' arg": function (done) {
+                var doneSpy = this.spy();
+
+                this.replaceBustersFail();
+                assert.resourceEqual(this.res1a, this.res1b, doneSpy);
+                this.restoreBustersFail();
+
+                assert.equals(doneSpy.callCount, 1, "should have called its 'done' exactly once");
+                assert.equals(doneSpy.args[0], [], "should have called its 'done' without args");
+                done();
+            }
+
+        },
+
+        "//fails with resources that differ in content": function (done) {
         }
     }
 });
