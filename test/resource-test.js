@@ -38,44 +38,49 @@ buster.testCase("Resources", {
         },
 
         "does not fail with only etag": function () {
-            var rs = rr.createResource("/path", { etag: "abc123" });
-            assert.defined(rs);
+            var res = rr.createResource("/path", { etag: "abc123" });
+            assert.defined(res);
         },
 
         "returns resource": function () {
-            var rs = rr.createResource("/path", {
+            var res = rr.createResource("/path", {
                 content: "Something"
             });
 
-            assert.defined(rs);
+            assert.defined(res);
         },
 
         "creates cacheable resources by default": function () {
-            var rs = rr.createResource("/path", {
+            var res = rr.createResource("/path", {
                 content: "Something"
             });
 
-            assert(rs.cacheable);
+            assert.isTrue(res.cacheable);
         },
 
         "creates uncacheable resource": function () {
-            var rs = rr.createResource("/path", {
+            var res = rr.createResource("/path", {
                 content: "Something",
                 cacheable: false
             });
 
-            assert.isFalse(rs.cacheable);
+            assert.isFalse(res.cacheable);
         }
     },
 
     "headers": {
         "are never null": function () {
-            var rs = rr.createResource("/path", { content: "Hey" });
-            assert.defined(rs.headers());
+            var res = rr.createResource("/path", { content: "Hey" });
+            refute.isNull(res.headers());
+        },
+
+        "are never undefined": function () {
+            var res = rr.createResource("/path", { content: "Hey" });
+            assert.defined(res.headers());
         },
 
         "reflect configured values": function () {
-            var rs = rr.createResource("/path", {
+            var res = rr.createResource("/path", {
                 content: "Hey",
                 headers: {
                     "Content-Type": "application/xhtml",
@@ -83,109 +88,111 @@ buster.testCase("Resources", {
                 }
             });
 
-            assert.equals(rs.headers(), {
+            assert.equals(res.headers(), {
                 "Content-Type": "application/xhtml",
                 "Content-Length": "3"
             });
         },
 
-        "has default Content-Type": function () {
-            var rs = rr.createResource("/path", { content: "Hey" });
+        "has non-null default Content-Type": function () {
+            var res = rr.createResource("/path", { content: "Hey" });
+            var contentType = res.headers()["Content-Type"];
 
-            assert.defined(rs.headers()["Content-Type"]);
+            assert.defined(contentType);
+            refute.isNull(contentType);
         },
 
         "includes etag when set": function () {
-            var rs = rr.createResource("/path", {
+            var res = rr.createResource("/path", {
                 etag: "1234abc",
                 content: "Hey"
             });
 
-            assert.equals(rs.header("ETag"), "1234abc");
+            assert.equals(res.header("ETag"), "1234abc");
         },
 
         "are empty for backend resource": function () {
-            var rs = rr.createResource("/api", { backend: "http://localhost" });
+            var res = rr.createResource("/api", { backend: "http://localhost" });
 
-            assert.equals(rs.headers(), {});
+            assert.equals(res.headers(), {});
         }
     },
 
     "Content-Type": {
         "defaults to text/html and utf-8": function () {
-            var rs = rr.createResource("/path", { content: "<!DOCTYPE html>" });
+            var res = rr.createResource("/path", { content: "<!DOCTYPE html>" });
 
-            assert.equals(rs.header("Content-Type"),
+            assert.equals(res.header("Content-Type"),
                           "text/html; charset=utf-8");
         },
 
         "defaults to text/html and set charset": function () {
-            var rs = rr.createResource("/path", {
+            var res = rr.createResource("/path", {
                 encoding: "iso-8859-1",
                 content: "<!DOCTYPE html>"
             });
 
-            assert.equals(rs.header("Content-Type"),
+            assert.equals(res.header("Content-Type"),
                           "text/html; charset=iso-8859-1");
         },
 
         "defaults to text/css for CSS files": function () {
-            var rs = rr.createResource("/path.css", {
+            var res = rr.createResource("/path.css", {
                 content: "body {}"
             });
 
-            assert.equals(rs.header("Content-Type"),
+            assert.equals(res.header("Content-Type"),
                           "text/css; charset=utf-8");
         },
 
         "defaults to application/javascript for JS files": function () {
-            var rs = rr.createResource("/path.js", {
+            var res = rr.createResource("/path.js", {
                 content: "function () {}"
             });
 
-            assert.equals(rs.header("Content-Type"),
+            assert.equals(res.header("Content-Type"),
                           "application/javascript; charset=utf-8");
         },
 
         "does not include charset for binary files": function () {
-            var rs = rr.createResource("/file.png", {
+            var res = rr.createResource("/file.png", {
                 content: new Buffer([])
             });
 
-            assert.equals(rs.header("Content-Type"), "image/png");
+            assert.equals(res.header("Content-Type"), "image/png");
         },
 
         "defaults encoding to base64 for binary files": function () {
-            var rs = rr.createResource("/file.png", {
+            var res = rr.createResource("/file.png", {
                 content: new Buffer([])
             });
 
-            assert.equals(rs.encoding, "base64");
+            assert.equals(res.encoding, "base64");
         }
     },
 
     "with string content": {
         "serves string as content": function (done) {
-            var rs = rr.createResource("/path.js", {
+            var res = rr.createResource("/path.js", {
                 content: "console.log(42);"
             });
 
-            assert.content(rs, "console.log(42);", done);
+            assert.content(res, "console.log(42);", done);
         }
     },
 
     "with buffer content": {
         "assumes utf-8 encoded string": function (done) {
             var bytes = [231, 167, 129, 227, 129, 175, 227, 130, 172];
-            var rs = rr.createResource("/path.txt", {
+            var res = rr.createResource("/path.txt", {
                 content: new Buffer(bytes)
             });
 
-            assert.content(rs, "私はガ", done);
+            assert.content(res, "私はガ", done);
         },
 
         "encodes png with base64": function (done) {
-            var rs = rr.createResource("/3x3-cross.png", {
+            var res = rr.createResource("/3x3-cross.png", {
                 content: new Buffer([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0,
                                      13, 73, 72, 68, 82, 0, 0, 0, 3, 0, 0, 0,
                                      3, 8, 6, 0, 0, 0, 86, 40, 181, 191, 0, 0,
@@ -205,7 +212,7 @@ buster.testCase("Resources", {
                 encoding: "base64"
             });
 
-            assert.content(rs, "iVBORw0KGgoAAAANSUhEUgAAAAMAAAADCAYA" +
+            assert.content(res, "iVBORw0KGgoAAAANSUhEUgAAAAMAAAADCAYA" +
                            "AABWKLW/AAAAAXNSR0IArs4c6QAAAAZiS0dEAGgAVwBWu/pLB" +
                            "wAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9wBBRYICH" +
                            "0/co4AAAAIdEVYdENvbW1lbnQA9syWvwAAABRJREFUCNdjYGB" +
@@ -213,130 +220,130 @@ buster.testCase("Resources", {
         }
     },
 
-    "respondsTo": {
+    "respondsTo returns": {
         "true when path matches resource path": function () {
-            var rs = rr.createResource("/file.js", { content: "Yo" });
-            assert(rs.respondsTo("/file.js"));
+            var res = rr.createResource("/file.js", { content: "Yo" });
+            assert(res.respondsTo("/file.js"));
         },
 
         "true when path sans trailing slash == resource path": function () {
-            var rs = rr.createResource("/file", { content: "Yo" });
-            assert(rs.respondsTo("/file/"));
+            var res = rr.createResource("/file", { content: "Yo" });
+            assert(res.respondsTo("/file/"));
         },
 
         "true when path == resource path sans trailing slash": function () {
-            var rs = rr.createResource("/file/", { content: "Yo" });
-            assert(rs.respondsTo("/file"));
+            var res = rr.createResource("/file/", { content: "Yo" });
+            assert(res.respondsTo("/file"));
         },
 
         "false for different paths": function () {
-            var rs = rr.createResource("/styles.css", { content: "Yo" });
-            refute(rs.respondsTo("/"));
+            var res = rr.createResource("/styles.css", { content: "Yo" });
+            refute(res.respondsTo("/"));
         },
 
         "false for partial path match": function () {
-            var rs = rr.createResource("/styles", { content: "Yo" });
-            refute(rs.respondsTo("/styles/page.css"));
+            var res = rr.createResource("/styles", { content: "Yo" });
+            refute(res.respondsTo("/styles/page.css"));
         }
     },
 
     "with backend": {
         "content is proxy instance": function () {
-            var rs = rr.createResource("/api", { backend: "localhost" });
+            var res = rr.createResource("/api", { backend: "localhost" });
 
-            assert.isObject(rs.content());
-            assert.isFunction(rs.content().respond);
+            assert.isObject(res.content());
+            assert.isFunction(res.content().respond);
         },
 
         "content is always same proxy instance": function () {
-            var rs = rr.createResource("/api", { backend: "localhost" });
+            var res = rr.createResource("/api", { backend: "localhost" });
 
-            assert.same(rs.content(), rs.content());
+            assert.same(res.content(), res.content());  // WHUT?!
         },
 
         "defaults port to 80": function () {
-            var rs = rr.createResource("/api", { backend: "localhost" });
+            var res = rr.createResource("/api", { backend: "localhost" });
 
-            assert.equals(rs.content().port, 80);
+            assert.equals(res.content().port, 80);
         },
 
         "defaults path to nothing": function () {
-            var rs = rr.createResource("/api", { backend: "localhost" });
+            var res = rr.createResource("/api", { backend: "localhost" });
 
-            assert.equals(rs.content().path, "");
+            assert.equals(res.content().path, "");
         },
 
         "overrides default port": function () {
-            var rs = rr.createResource("/api", { backend: "localhost:79" });
+            var res = rr.createResource("/api", { backend: "localhost:79" });
 
-            assert.equals(rs.content().port, 79);
+            assert.equals(res.content().port, 79);
         },
 
         "overrides default path": function () {
-            var rs = rr.createResource("/api", { backend: "localhost/yep" });
+            var res = rr.createResource("/api", { backend: "localhost/yep" });
 
-            assert.equals(rs.content().path, "/yep");
-            assert.equals(rs.content().getProxyPath(), "/api");
+            assert.equals(res.content().path, "/yep");
+            assert.equals(res.content().getProxyPath(), "/api");
         },
 
         "uses full URL": function () {
-            var rs = rr.createResource("/api", {
+            var res = rr.createResource("/api", {
                 backend: "http://something:8080/crowd/"
             });
 
-            assert.match(rs.content(), {
+            assert.match(res.content(), {
                 host: "something",
                 port: 8080,
                 path: "/crowd"
             });
         },
 
-        "respondsTo": {
+        "respondsTo returns": {
             setUp: function () {
-                this.rs = rr.createResource("/api", { backend: "localhost" });
+                this.res = rr.createResource("/api", { backend: "localhost" });
             },
 
-            "responds to requests for root path": function () {
-                assert(this.rs.respondsTo("/api"));
+            "true for root path": function () {
+                assert(this.res.respondsTo("/api"));
             },
 
-            "responds to requests for nested resource": function () {
-                assert(this.rs.respondsTo("/api/2.0/index"));
+            "true for nested resource": function () {
+                assert(this.res.respondsTo("/api/2.0/index"));
             },
 
-            "does not respond to requests outside root path": function () {
-                refute(this.rs.respondsTo("/2.0/index"));
+            "false for requests outside root path": function () {
+                refute(this.res.respondsTo("/2.0/index"));
             }
         }
     },
 
     "with function content": {
         "resolves with content function return value": function (done) {
-            var rs = rr.createResource("/api", { content: function () {
+            var res = rr.createResource("/api", { content: function () {
                 return "42";
             } });
 
-            assert.content(rs, "42", done);
+            assert.content(res, "42", done);
         },
 
         "resolves content() when function promise resolves": function (done) {
             var d = when.defer();
-            var rs = rr.createResource("/api", { content: function () {
+            var res = rr.createResource("/api", { content: function () {
                 return d.promise;
             } });
-
             d.resolver.resolve("OMG");
-            assert.content(rs, "OMG", done);
+
+            assert.content(res, "OMG", done);
         },
 
         "rejects content() when function promise rejects": function (done) {
             var d = when.defer();
-            var rs = rr.createResource("/api", { content: function () {
+            var res = rr.createResource("/api", { content: function () {
                 return d.promise;
             } });
-
             d.resolver.reject("OMG");
-            rs.content().then(
+
+            res.content().then(
                 done(shouldReject),
                 done(function (err) {
                     assert.equals(err, "OMG");
@@ -346,20 +353,20 @@ buster.testCase("Resources", {
 
         "calls content function with resource as this": function () {
             var content = this.spy();
-            var rs = rr.createResource("/api", { content: content });
+            var res = rr.createResource("/api", { content: content });
 
-            rs.content();
+            res.content();
 
             assert.calledOnce(content);
-            assert.calledOn(content, rs);
+            assert.calledOn(content, res);
         }
     },
 
     "with fully qualified url as path": {
         "content is path": function (done) {
-            var rs = rr.createResource("file:///tmp/trash.txt");
+            var res = rr.createResource("file:///tmp/trash.txt");
 
-            assert.content(rs, "file:///tmp/trash.txt", done);
+            assert.content(res, "file:///tmp/trash.txt", done);
         }
     },
 
@@ -383,72 +390,72 @@ buster.testCase("Resources", {
 
     "processors": {
         "process content": function (done) {
-            var rs = rr.createResource("/path", {
+            var res = rr.createResource("/path", {
                 content: "Hey"
             });
 
-            rs.addProcessor(function (resource, content) {
+            res.addProcessor(function (resource, content) {
                 return content + "!!";
             });
 
-            assert.content(rs, "Hey!!", done);
+            assert.content(res, "Hey!!", done);
         },
 
         "process content in a chain": function (done) {
-            var rs = rr.createResource("/path", {
+            var res = rr.createResource("/path", {
                 content: "Hey"
             });
 
-            rs.addProcessor(function (resource, content) {
+            res.addProcessor(function (resource, content) {
                 return content + "!!";
             });
-            rs.addProcessor(function (resource, content) {
+            res.addProcessor(function (resource, content) {
                 return content + "??";
             });
 
-            assert.content(rs, "Hey!!??", done);
+            assert.content(res, "Hey!!??", done);
         },
 
         "processes deferred content": function (done) {
-            var rs = rr.createResource("/path", {
+            var res = rr.createResource("/path", {
                 content: function () { return "42"; }
             });
 
-            rs.addProcessor(function (resource, content) {
+            res.addProcessor(function (resource, content) {
                 return content + "!!";
             });
-            rs.addProcessor(function (resource, content) {
+            res.addProcessor(function (resource, content) {
                 return content + "??";
             });
 
-            assert.content(rs, "42!!??", done);
+            assert.content(res, "42!!??", done);
         },
 
         "leaves content untouched if processor returns undefined": function (done) {
-            var rs = rr.createResource("/path", {
+            var res = rr.createResource("/path", {
                 content: function () { return "42"; }
             });
 
-            rs.addProcessor(function (resource, content) {});
+            res.addProcessor(function (resource, content) {});
 
-            assert.content(rs, "42", done);
+            assert.content(res, "42", done);
         },
 
         "blanks content by returning blank string": function (done) {
-            var rs = rr.createResource("/path", {
+            var res = rr.createResource("/path", {
                 content: function () { return "42"; }
             });
 
-            rs.addProcessor(function (resource, content) { return ""; });
+            res.addProcessor(function (resource, content) { return ""; });
 
-            assert.content(rs, "", done);
+            assert.content(res, "", done);
         },
 
         "rejects if string content processor throws": function (done) {
-            var rs = rr.createResource("/path", { content: "Hey" });
-            rs.addProcessor(function () { throw new Error("Process fail"); });
+            var res = rr.createResource("/path", { content: "Hey" });
+            res.addProcessor(function () { throw new Error("Process fail"); });
 
-            rs.content().then(
+            res.content().then(
                 done(shouldReject),
                 done(function (err) {
                     assert.match(err.message, "Process fail");
@@ -457,12 +464,12 @@ buster.testCase("Resources", {
         },
 
         "rejects if function content processor throws": function (done) {
-            var rs = rr.createResource("/path", {
+            var res = rr.createResource("/path", {
                 content: this.stub().returns("Hey")
             });
-            rs.addProcessor(function () { throw new Error("Process fail"); });
+            res.addProcessor(function () { throw new Error("Process fail"); });
 
-            rs.content().then(
+            res.content().then(
                 done(shouldReject),
                 done(function (err) {
                     assert.match(err.message, "Process fail");
@@ -471,60 +478,60 @@ buster.testCase("Resources", {
         },
 
         "creates etag hash": function () {
-            var rs = rr.createResource("/path", {
+            var res = rr.createResource("/path", {
                 content: "Hey"
             });
 
-            rs.addProcessor(function () {});
+            res.addProcessor(function () {});
 
-            assert.equals(rs.etag, "e4575dc296fb6f90f3d605701361e143b2ac55b9");
+            assert.equals(res.etag, "e4575dc296fb6f90f3d605701361e143b2ac55b9");
         },
 
         "updates existing etag": function () {
-            var rs = rr.createResource("/path", {
+            var res = rr.createResource("/path", {
                 etag: "123",
                 content: "Hey"
             });
 
-            rs.addProcessor(function () {});
+            res.addProcessor(function () {});
 
-            assert.equals(rs.etag, "5f46fdd28899bea84ebb9af2a1d0ffa32c0cca05");
+            assert.equals(res.etag, "5f46fdd28899bea84ebb9af2a1d0ffa32c0cca05");
         },
 
         "always update existing etag": function () {
-            var rs = rr.createResource("/path", {
+            var res = rr.createResource("/path", {
                 etag: "123",
                 content: "Hey"
             });
 
-            rs.addProcessor(function () {});
-            rs.addProcessor(function () { return "OK"; });
+            res.addProcessor(function () {});
+            res.addProcessor(function () { return "OK"; });
 
-            assert.equals(rs.etag, "4b0b20e81e9db06b84fc7589e22507eb3d3db04c");
+            assert.equals(res.etag, "4b0b20e81e9db06b84fc7589e22507eb3d3db04c");
         },
 
         "does not process content for alternatives": function (done) {
-            var rs = rr.createResource("/path", { content: "Hey" });
-            rs.addAlternative({ content: "Haha", mimeType: "text/css" });
+            var res = rr.createResource("/path", { content: "Hey" });
+            res.addAlternative({ content: "Haha", mimeType: "text/css" });
 
-            rs.addProcessor(function (resource, content) {
+            res.addProcessor(function (resource, content) {
                 return content + "!!";
             });
 
-            assert.content(rs.getContentFor("text/css"), "Haha", done);
+            assert.content(res.getContentFor("text/css"), "Haha", done);
         }
     },
 
     "process": {
         setUp: function () {
             this.content = this.stub().returns("Something");
-            this.rs = rr.createResource("/path", { content: this.content });
+            this.res = rr.createResource("/path", { content: this.content });
         },
 
         "does not resolve content if no processors": function (done) {
             var contentFn = this.content;
 
-            this.rs.process().then(
+            this.res.process().then(
                 done(function () {
                     refute.called(contentFn);
                 }),
@@ -533,22 +540,22 @@ buster.testCase("Resources", {
         },
 
         "resolves and processes content with one processor": function (done) {
-            var rs = this.rs;
+            var res = this.res;
             var contentFn = this.content;
             var processor = this.stub().returns("");
-            rs.addProcessor(processor);
+            res.addProcessor(processor);
 
-            rs.process().then(
+            res.process().then(
                 done(function () {
                     assert.calledOnce(contentFn);
-                    assert.calledOnceWith(processor, rs, "Something");
+                    assert.calledOnceWith(processor, res, "Something");
                 }),
                 done(shouldResolve)
             );
         },
 
         "yields null when not processing": function (done) {
-            this.rs.process().then(
+            this.res.process().then(
                 done(function (content) {
                     assert.isNull(content);
                 }),
@@ -557,11 +564,11 @@ buster.testCase("Resources", {
         },
 
         "yields processed content": function (done) {
-            var rs = this.rs;
+            var res = this.res;
             var processor = this.stub().returns("\\m/");
-            rs.addProcessor(processor);
+            res.addProcessor(processor);
 
-            rs.process().then(
+            res.process().then(
                 done(function (content) {
                     assert.equals(content, "\\m/");
                 }),
@@ -570,11 +577,11 @@ buster.testCase("Resources", {
         },
 
         "rejects if processor throws": function (done) {
-            var rs = this.rs;
+            var res = this.res;
             var expectedError = new Error("Bang!");
-            rs.addProcessor(this.stub().throws(expectedError));
+            res.addProcessor(this.stub().throws(expectedError));
 
-            rs.process().then(
+            res.process().then(
                 done(shouldReject),
                 done(function (err) {
                     assert.defined(err);
@@ -585,42 +592,31 @@ buster.testCase("Resources", {
     },
 
     "enclose": {
-        "wraps content in an iife": function (done) {
-            var rs = rr.createResource("/path", {
+        "wraps content in an IIFE": function (done) {
+            var res = rr.createResource("/path", {
                 content: this.stub().returns("var a = 42;"),
                 enclose: true
             });
 
-            rs.content().then(
-                done(function (content) {
-                    var expected = "(function () {var a = 42;}.call(this));";
-                    assert.equals(content, expected);
-                }),
-                done(shouldResolve)
-            );
+            assert.content(res, "(function () {var a = 42;}.call(this));", done);
         },
 
-        "adds exports to iife": function (done) {
-            var rs = rr.createResource("/path", {
+        "adds exports to IIFE": function (done) {
+            var res = rr.createResource("/path", {
                 content: this.stub().returns("var a = 42;"),
                 enclose: true,
                 exports: ["a"]
             });
+            var expected = "(function (global) {var a = 42;global.a=a;}"
+                           + ".call(this, typeof global != \"undefined\" ? "
+                           + "global : this));";
 
-            rs.content().then(
-                done(function (content) {
-                    var context = "(function (global) {var a = 42;global.a=a;}" +
-                                  ".call(this, typeof global != \"undefined\" ? " +
-                                  "global : this));";
-                    assert.equals(content, context);
-                }),
-                done(shouldResolve)
-            );
+            assert.content(res, expected, done);
         }
     },
 
     "serialize": {
-        "fails if content rejects": function (done) {
+        "rejects if content rejects": function (done) {
             var d = when.defer();
             d.resolver.reject("MEH");
             var res = rr.createResource("/meh", {
@@ -636,7 +632,7 @@ buster.testCase("Resources", {
             );
         },
 
-        "fails if content throws": function (done) {
+        "rejects if content throws": function (done) {
             var res = rr.createResource("/meh", {
                 content: function () { throw new Error("MEH"); }
             });
@@ -679,7 +675,7 @@ buster.testCase("Resources", {
             );
         },
 
-        "fails if content processor throws": function (done) {
+        "rejects if content processor throws": function (done) {
             var res = rr.createResource("/meh", {
                 content: function () { return "Content"; }
             });
@@ -746,9 +742,9 @@ buster.testCase("Resources", {
             var res = rr.createResource("http://cdn/thing.js");
 
             res.serialize({ includeContent: false }).then(
-                done(function (s) {
-                    refute(s.content);
-                    assert.equals(s.path, "http://cdn/thing.js");
+                done(function (serialized) {
+                    refute(serialized.content);
+                    assert.equals(serialized.path, "http://cdn/thing.js");
                 }),
                 done(shouldResolve)
             );
