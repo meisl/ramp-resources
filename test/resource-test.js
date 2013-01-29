@@ -1,8 +1,11 @@
+/*jslint maxlen:100*/
 var buster = require("buster");
 var when = require("when");
 var rr = require("../lib/ramp-resources");
 var br = require("../lib/resource");
-require("./test-helper.js");
+var h = require("./test-helper.js");
+var shouldReject = h.shouldReject;
+var shouldResolve = h.shouldResolve;
 
 buster.testCase("Resources", {
     "create": {
@@ -333,9 +336,12 @@ buster.testCase("Resources", {
             } });
 
             d.resolver.reject("OMG");
-            rs.content().then(function () {}, done(function (err) {
-                assert.equals(err, "OMG");
-            }));
+            rs.content().then(
+                done(shouldReject),
+                done(function (err) {
+                    assert.equals(err, "OMG");
+                })
+            );
         },
 
         "calls content function with resource as this": function () {
@@ -353,9 +359,7 @@ buster.testCase("Resources", {
         "content is path": function (done) {
             var rs = rr.createResource("file:///tmp/trash.txt");
 
-            rs.content().then(done(function (content) {
-                assert.equals(content, "file:///tmp/trash.txt");
-            }));
+            assert.content(rs, "file:///tmp/trash.txt", done);
         }
     },
 
@@ -420,7 +424,7 @@ buster.testCase("Resources", {
             assert.content(rs, "42!!??", done);
         },
 
-        "leaves content untouched if returns undefined": function (done) {
+        "leaves content untouched if processor returns undefined": function (done) {
             var rs = rr.createResource("/path", {
                 content: function () { return "42"; }
             });
@@ -444,11 +448,12 @@ buster.testCase("Resources", {
             var rs = rr.createResource("/path", { content: "Hey" });
             rs.addProcessor(function () { throw new Error("Process fail"); });
 
-            rs.content().then(done(function () {
-                buster.assertions.fail("Expected to fail");
-            }), done(function (err) {
-                assert.match(err.message, "Process fail");
-            }));
+            rs.content().then(
+                done(shouldReject),
+                done(function (err) {
+                    assert.match(err.message, "Process fail");
+                })
+            );
         },
 
         "rejects if function content processor throws": function (done) {
@@ -457,11 +462,12 @@ buster.testCase("Resources", {
             });
             rs.addProcessor(function () { throw new Error("Process fail"); });
 
-            rs.content().then(done(function () {
-                buster.assertions.fail("Expected to fail");
-            }), done(function (err) {
-                assert.match(err.message, "Process fail");
-            }));
+            rs.content().then(
+                done(shouldReject),
+                done(function (err) {
+                    assert.match(err.message, "Process fail");
+                })
+            );
         },
 
         "creates etag hash": function () {
@@ -516,42 +522,65 @@ buster.testCase("Resources", {
         },
 
         "does not resolve content if no processors": function (done) {
-            this.rs.process().then(done(function () {
-                refute.called(this.content);
-            }.bind(this)));
+            var contentFn = this.content;
+
+            this.rs.process().then(
+                done(function () {
+                    refute.called(contentFn);
+                }),
+                done(shouldResolve)
+            );
         },
 
         "resolves and processes content with one processor": function (done) {
+            var rs = this.rs;
+            var contentFn = this.content;
             var processor = this.stub().returns("");
-            this.rs.addProcessor(processor);
+            rs.addProcessor(processor);
 
-            this.rs.process().then(done(function () {
-                assert.calledOnce(this.content);
-                assert.calledOnceWith(processor, this.rs, "Something");
-            }.bind(this)));
+            rs.process().then(
+                done(function () {
+                    assert.calledOnce(contentFn);
+                    assert.calledOnceWith(processor, rs, "Something");
+                }),
+                done(shouldResolve)
+            );
         },
 
         "yields null when not processing": function (done) {
-            this.rs.process().then(done(function (content) {
-                assert.isNull(content);
-            }.bind(this)));
+            this.rs.process().then(
+                done(function (content) {
+                    assert.isNull(content);
+                }),
+                done(shouldResolve)
+            );
         },
 
         "yields processed content": function (done) {
+            var rs = this.rs;
             var processor = this.stub().returns("\\m/");
-            this.rs.addProcessor(processor);
+            rs.addProcessor(processor);
 
-            this.rs.process().then(done(function (content) {
-                assert.equals(content, "\\m/");
-            }.bind(this)));
+            rs.process().then(
+                done(function (content) {
+                    assert.equals(content, "\\m/");
+                }),
+                done(shouldResolve)
+            );
         },
 
-        "fails if processor throws": function (done) {
-            this.rs.addProcessor(this.stub().throws());
+        "rejects if processor throws": function (done) {
+            var rs = this.rs;
+            var expectedError = new Error("Bang!");
+            rs.addProcessor(this.stub().throws(expectedError));
 
-            this.rs.process().then(function () {}, done(function (err) {
-                assert.defined(err);
-            }));
+            rs.process().then(
+                done(shouldReject),
+                done(function (err) {
+                    assert.defined(err);
+                    assert.match(err, "Bang!");
+                })
+            );
         }
     },
 
@@ -562,10 +591,13 @@ buster.testCase("Resources", {
                 enclose: true
             });
 
-            rs.content().then(done(function (content) {
-                var expected = "(function () {var a = 42;}.call(this));";
-                assert.equals(content, expected);
-            }.bind(this)));
+            rs.content().then(
+                done(function (content) {
+                    var expected = "(function () {var a = 42;}.call(this));";
+                    assert.equals(content, expected);
+                }),
+                done(shouldResolve)
+            );
         },
 
         "adds exports to iife": function (done) {
@@ -575,12 +607,15 @@ buster.testCase("Resources", {
                 exports: ["a"]
             });
 
-            rs.content().then(done(function (content) {
-                var context = "(function (global) {var a = 42;global.a=a;}" +
-                              ".call(this, typeof global != \"undefined\" ? " +
-                              "global : this));";
-                assert.equals(content, context);
-            }.bind(this)));
+            rs.content().then(
+                done(function (content) {
+                    var context = "(function (global) {var a = 42;global.a=a;}" +
+                                  ".call(this, typeof global != \"undefined\" ? " +
+                                  "global : this));";
+                    assert.equals(content, context);
+                }),
+                done(shouldResolve)
+            );
         }
     },
 
@@ -592,10 +627,13 @@ buster.testCase("Resources", {
                 content: function () { return d.promise; }
             });
 
-            res.serialize().then(function () {}, done(function (err) {
-                assert.defined(err);
-                assert.match(err, "MEH");
-            }));
+            res.serialize().then(
+                done(shouldReject),
+                done(function (err) {
+                    assert.defined(err);
+                    assert.match(err, "MEH");
+                })
+            );
         },
 
         "fails if content throws": function (done) {
@@ -603,10 +641,13 @@ buster.testCase("Resources", {
                 content: function () { throw new Error("MEH"); }
             });
 
-            res.serialize().then(function () {}, done(function (err) {
-                assert.defined(err);
-                assert.match(err, "MEH");
-            }));
+            res.serialize().then(
+                done(shouldReject),
+                done(function (err) {
+                    assert.defined(err);
+                    assert.match(err, "MEH");
+                })
+            );
         },
 
         "includes enclose property if true": function (done) {
@@ -615,9 +656,12 @@ buster.testCase("Resources", {
                 enclose: true
             });
 
-            res.serialize().then(done(function (serialized) {
-                assert.isTrue(serialized.enclose);
-            }));
+            res.serialize().then(
+                done(function (serialized) {
+                    assert.isTrue(serialized.enclose);
+                }),
+                done(shouldResolve)
+            );
         },
 
         "includes exports if set": function (done) {
@@ -627,9 +671,12 @@ buster.testCase("Resources", {
                 exports: ["a", "b"]
             });
 
-            res.serialize().then(done(function (serialized) {
-                assert.equals(serialized.exports, ["a", "b"]);
-            }));
+            res.serialize().then(
+                done(function (serialized) {
+                    assert.equals(serialized.exports, ["a", "b"]);
+                }),
+                done(shouldResolve)
+            );
         },
 
         "fails if content processor throws": function (done) {
@@ -639,10 +686,13 @@ buster.testCase("Resources", {
 
             res.addProcessor(function () { throw new Error("Meh"); });
 
-            res.serialize().then(function () {}, done(function (err) {
-                assert.defined(err);
-                assert.match(err, "Meh");
-            }));
+            res.serialize().then(
+                done(shouldReject),
+                done(function (err) {
+                    assert.defined(err);
+                    assert.match(err, "Meh");
+                })
+            );
         },
 
         "includes cacheable flag": function (done) {
@@ -650,9 +700,12 @@ buster.testCase("Resources", {
                 content: function () { return "Content"; }
             });
 
-            res.serialize().then(done(function (serialized) {
-                assert(serialized.cacheable);
-            }), function () {});
+            res.serialize().then(
+                done(function (serialized) {
+                    assert(serialized.cacheable);
+                }),
+                done(shouldResolve)
+            );
         },
 
         "includes alternatives": function (done) {
@@ -662,12 +715,15 @@ buster.testCase("Resources", {
                 mimeType: "text/uppercase"
             });
 
-            res.serialize().then(done(function (serialized) {
-                assert.match(serialized.alternatives, [{
-                    content: "CONTENT",
-                    mimeType: "text/uppercase"
-                }]);
-            }), function (e) { console.log(e); });
+            res.serialize().then(
+                done(function (serialized) {
+                    assert.match(serialized.alternatives, [{
+                        content: "CONTENT",
+                        mimeType: "text/uppercase"
+                    }]);
+                }),
+                done(shouldResolve)
+            );
         },
 
         "does not include alternatives when skipping content": function (done) {
@@ -677,19 +733,25 @@ buster.testCase("Resources", {
                 mimeType: "text/uppercase"
             });
 
-            res.serialize({ includeContent: false }).then(done(function (s) {
-                refute(s.content);
-                refute.defined(s.alternatives);
-            }), function (e) { console.log(e); });
+            res.serialize({ includeContent: false }).then(
+                done(function (s) {
+                    refute(s.content);
+                    refute.defined(s.alternatives);
+                }),
+                done(shouldResolve)
+            );
         },
 
         "does not include content for fully qualified path": function (done) {
             var res = rr.createResource("http://cdn/thing.js");
 
-            res.serialize({ includeContent: false }).then(done(function (s) {
-                refute(s.content);
-                assert.equals(s.path, "http://cdn/thing.js");
-            }), function (e) { console.log(e); });
+            res.serialize({ includeContent: false }).then(
+                done(function (s) {
+                    refute(s.content);
+                    assert.equals(s.path, "http://cdn/thing.js");
+                }),
+                done(shouldResolve)
+            );
         }
     },
 
@@ -746,8 +808,8 @@ buster.testCase("Resources", {
 
     "normalizePath": {
         "windows path with more than one path separator": function () {
-            assert.equals(br.normalizePath("test\\other\\1.js"),
-                    "/test/other/1.js");
+            var path = br.normalizePath("test\\other\\1.js");
+            assert.equals(path, "/test/other/1.js");
         }
     }
 });
