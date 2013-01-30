@@ -223,7 +223,6 @@ buster.testCase("Resources", {
             var self = this;
             this.encOf = function (ext, content) {
                 self.res = rr.createResource("/file" + ext, { content: content });
-                self.ct = self.res.headers("Content-Type");
                 return self.res.encoding;
             };
         },
@@ -253,7 +252,7 @@ buster.testCase("Resources", {
                 // this test separated to emphasize that "no ext" vs "empty ext"
                 // does make a difference...!
                 "path with empty extension": function () {
-                    var enc = this.encOf("", "sumthn");
+                    var enc = this.encOf(".", "sumthn");
                     assert.equals(enc, "base64");
                 },
 
