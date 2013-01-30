@@ -119,55 +119,158 @@ buster.testCase("Resources", {
     },
 
     "Content-Type": {
-        "defaults to text/html and utf-8": function () {
-            var res = rr.createResource("/path", { content: "<!DOCTYPE html>" });
-
-            assert.equals(res.header("Content-Type"),
-                          "text/html; charset=utf-8");
+        setUp: function () {
+            var self = this;
+            self.contentTypeOfRes = function (path, options) {
+                self.res = rr.createResource(path, options);
+                self.ct = self.res.header("Content-Type");
+                return self.ct;
+            };
+            self.ctFor = function (ext, content) {
+                return self.contentTypeOfRes("/file" + ext, { content: content });
+            };
         },
 
-        "defaults to text/html and set charset": function () {
-            var res = rr.createResource("/path", {
-                encoding: "iso-8859-1",
-                content: "<!DOCTYPE html>"
-            });
+        "defaults to": {
+            "application/octect-stream for path with empty extension": function () {
+                var ct = this.ctFor(".", "sumthn");
+                assert.match(ct, /^application\/octet-stream/);
+            },
 
-            assert.equals(res.header("Content-Type"),
-                          "text/html; charset=iso-8859-1");
+            "text/html for path without extension": function () {
+                var ct = this.ctFor("", "<!DOCTYPE html>");
+                assert.match(ct, /^text\/html/);
+            },
+
+            "text/html and set charset for path without ext": function () {
+                var ct = this.contentTypeOfRes("/path", {
+                    encoding: "iso-8859-1",
+                    content: "<!DOCTYPE html>"
+                });
+                assert.equals(ct, "text/html; charset=iso-8859-1");
+            },
+
+            "text/html for HTM files": function () {
+                var ct = this.ctFor(".htm", "<!DOCTYPE html>");
+                assert.match(ct, /^text\/html/);
+            },
+
+            "text/html for HTML files": function () {
+                var ct = this.ctFor(".html", "<!DOCTYPE html>");
+                assert.match(ct, /^text\/html/);
+            },
+
+            "text/plain for TXT files": function () {
+                var ct = this.ctFor(".txt", "some blah to consider");
+                assert.match(ct, /^text\/plain/);
+            },
+
+            "text/css for CSS files": function () {
+                var ct = this.ctFor(".css", "body {}");
+                assert.match(ct, /^text\/css/);
+            },
+
+            "application/javascript for JS files": function () {
+                var ct = this.ctFor(".js", "function () {}");
+                assert.match(ct, /^application\/javascript/);
+            },
+
+            "charset=utf-8 for (.HTML?|.TXT|.CSS|.JS) files": function () {
+                var c = "shouldNotMatter"; // actual content shouldn't matter (nor its type)
+                var rx = /charset=utf-8/;
+
+                assert.match(this.ctFor(".htm",  c), rx);
+                assert.match(this.ctFor(".html", c), rx);
+                assert.match(this.ctFor(".txt",  c), rx);
+                assert.match(this.ctFor(".css",  c), rx);
+                assert.match(this.ctFor(".js",   c), rx);
+            },
+
+            // this test separated to emphasize that "no ext" vs "empty ext"
+            // does make a difference...!
+            "charset=utf-8 for path without extension": function () {
+                var c = "shouldNotMatter"; // actual content shouldn't matter (nor its type)
+                assert.match(this.ctFor("", c), /charset=utf-8/);
+            }
         },
 
-        "defaults to text/css for CSS files": function () {
-            var res = rr.createResource("/path.css", {
-                content: "body {}"
-            });
+        "does not include charset for": {
+            // this test separated to emphasize that "no ext" vs "empty ext"
+            // does make a difference...!
+            "path with empty extension": function () {
+                var c = "shouldNotMatter";
+                refute.match(this.ctFor(".", c), /charset=/i);
+            },
 
-            assert.equals(res.header("Content-Type"),
-                          "text/css; charset=utf-8");
+            "files with ext NOT (''|.HTML?|.TXT|.CSS|.JS)": function () {
+                var c = new Buffer([]); // actual content shouldn't matter (nor its type)
+                var rx = /charset=/i;
+
+                refute.match(this.ctFor(".png",   c), rx);
+                refute.match(this.ctFor(".jpg",   c), rx);
+                refute.match(this.ctFor(".jpeg",  c), rx);
+                refute.match(this.ctFor(".gif",   c), rx);
+                refute.match(this.ctFor(".ico",   c), rx);
+                refute.match(this.ctFor(".tif",   c), rx);
+                refute.match(this.ctFor(".tiff",  c), rx);
+                refute.match(this.ctFor(".alien", c), rx);
+            }
+        }
+    },
+
+    "encoding": {
+        setUp: function () {
+            var self = this;
+            this.encOf = function (ext, content) {
+                self.res = rr.createResource("/file" + ext, { content: content });
+                self.ct = self.res.headers("Content-Type");
+                return self.res.encoding;
+            };
         },
 
-        "defaults to application/javascript for JS files": function () {
-            var res = rr.createResource("/path.js", {
-                content: "function () {}"
-            });
+        "defaults to": {
+            "utf-8 for": {
+                "(.HTML?|.TXT|.CSS|.JS) files": function () {
+                    var c = "shouldNotMatter"; // actual content shouldn't matter (nor its type)
+                    var utf8 = "utf-8";
 
-            assert.equals(res.header("Content-Type"),
-                          "application/javascript; charset=utf-8");
-        },
+                    assert.equals(this.encOf(".htm",  c), utf8);
+                    assert.equals(this.encOf(".html", c), utf8);
+                    assert.equals(this.encOf(".css",  c), utf8);
+                    assert.equals(this.encOf(".js",   c), utf8);
+                    assert.equals(this.encOf(".txt",  c), utf8);
+                },
 
-        "does not include charset for binary files": function () {
-            var res = rr.createResource("/file.png", {
-                content: new Buffer([])
-            });
+                // this test separated to emphasize that "no ext" vs "empty ext"
+                // does make a difference...!
+                "path without extension": function () {
+                    var enc = this.encOf("", "sumthn");
+                    assert.equals(enc, "utf-8");
+                }
+            },
 
-            assert.equals(res.header("Content-Type"), "image/png");
-        },
+            "base64 for": {
+                // this test separated to emphasize that "no ext" vs "empty ext"
+                // does make a difference...!
+                "path with empty extension": function () {
+                    var enc = this.encOf("", "sumthn");
+                    assert.equals(enc, "base64");
+                },
 
-        "defaults encoding to base64 for binary files": function () {
-            var res = rr.createResource("/file.png", {
-                content: new Buffer([])
-            });
+                "files with ext NOT (''|.HTML?|.TXT|.CSS|.JS)": function () {
+                    var c = new Buffer([]); // actual content shouldn't matter (nor its type)
+                    var b64 = "base64";
 
-            assert.equals(res.encoding, "base64");
+                    assert.equals(this.encOf(".png",   c), b64);
+                    assert.equals(this.encOf(".jpg",   c), b64);
+                    assert.equals(this.encOf(".jpeg",  c), b64);
+                    assert.equals(this.encOf(".gif",   c), b64);
+                    assert.equals(this.encOf(".ico",   c), b64);
+                    assert.equals(this.encOf(".tif",   c), b64);
+                    assert.equals(this.encOf(".tiff",  c), b64);
+                    assert.equals(this.encOf(".alien", c), b64);
+                }
+            }
         }
     },
 
@@ -258,7 +361,7 @@ buster.testCase("Resources", {
         "content is always same proxy instance": function () {
             var res = rr.createResource("/api", { backend: "localhost" });
 
-            assert.same(res.content(), res.content());  // WHUT?!
+            assert.same(res.content(), res.content());  // WHUT is this supposed to test?!
         },
 
         "defaults port to 80": function () {
