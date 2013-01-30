@@ -1,3 +1,4 @@
+/*jslint maxlen:100*/
 var buster = require("buster");
 var httpProxy = require("../lib/http-proxy");
 var h = require("./test-helper");
@@ -9,6 +10,7 @@ buster.testCase("HTTP proxy", {
 
         this.proxyMiddleware = httpProxy.create("localhost", 2222);
         this.proxy = h.createServer(function (req, res) {
+            // Note: self.proxyMiddleware is replaced by some setUps or tests below
             self.proxyMiddleware.respond(req, res);
         }, done);
         this.backend = h.createProxyBackend(2222, done);
@@ -134,16 +136,18 @@ buster.testCase("HTTP proxy", {
 
     "close": {
         "closes pending request": function (done) {
+            var proxyMiddleware = this.proxyMiddleware;
             h.req({}, done(function (req, res) {
                 assert.equals(res.statusCode, 503);
             })).end();
 
             this.backend.onRequest = function (req, res) {
-                this.proxyMiddleware.close();
-            }.bind(this);
+                proxyMiddleware.close();
+            };
         },
 
         "does not close finished requests": function (done) {
+            var proxyMiddleware = this.proxyMiddleware;
             var calls = 0;
 
             h.req({}, function (req, res) {
@@ -158,12 +162,10 @@ buster.testCase("HTTP proxy", {
                 if (calls === 0) {
                     res.end("OK");
                 } else {
-                    refute.exception(function () {
-                        this.proxyMiddleware.close();
-                    }.bind(this));
+                    refute.exception(function () { proxyMiddleware.close(); });
                 }
                 calls++;
-            }.bind(this);
+            };
         }
     },
 
