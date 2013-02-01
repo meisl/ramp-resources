@@ -347,10 +347,12 @@ buster.testCase("Resources", {
             assert.isFunction(res.content().respond);
         },
 
-        "content is always same proxy instance": function () {
+        "content memoizes proxy instance": function () {
             var res = rr.createResource("/api", { backend: "localhost" });
-
-            assert.same(res.content(), res.content());  // WHUT is this supposed to test?!
+            var contentFrom1stCall = res.content();
+            var contentFrom2ndCall = res.content();
+            // expect thing from 2nd call (actual) to be same as the thing from 1st (expected):
+            assert.same(contentFrom2ndCall, contentFrom1stCall);
         },
 
         "defaults port to 80": function () {
