@@ -174,39 +174,42 @@ buster.testCase("Resources", {
             assert.equals(ct, "text/html; charset=iso-8859-1");
         },
 
-        "defaults charset=utf-8 for (.HTML?|.TXT|.CSS|.JS) files": function () {
-            var c = "shouldNotMatter"; // actual content shouldn't matter (nor its type)
-            var rx = /charset=utf-8/;
+        "/charset": {
 
-            assert.match(this.ctFor(".htm",  c), rx);
-            assert.match(this.ctFor(".html", c), rx);
-            assert.match(this.ctFor(".txt",  c), rx);
-            assert.match(this.ctFor(".css",  c), rx);
-            assert.match(this.ctFor(".js",   c), rx);
-        },
+            "defaults utf-8 for non-binary files": function () {
+                var c = "shouldNotMatter"; // actual content shouldn't matter (nor its type)
+                var rx = /charset=utf-8/;
 
-        "defaults charset=utf-8 for path *without* extension": function () {
-            var c = "shouldNotMatter"; // actual content shouldn't matter (nor its type)
-            assert.match(this.ctFor("", c), /charset=utf-8/);
-        },
+                assert.match(this.ctFor(".htm",  c), rx);
+                assert.match(this.ctFor(".html", c), rx);
+                assert.match(this.ctFor(".txt",  c), rx);
+                assert.match(this.ctFor(".css",  c), rx);
+                assert.match(this.ctFor(".js",   c), rx);
+            },
 
-        "does not include charset for path with *empty* extension": function () {
-            var c = "shouldNotMatter";
-            refute.match(this.ctFor(".", c), /charset=/i);
-        },
+            "defaults to utf-8 for path *without* extension": function () {
+                var c = "shouldNotMatter"; // actual content shouldn't matter (nor its type)
+                assert.match(this.ctFor("", c), /charset=utf-8/);
+            },
 
-        "does not include charset for binary files": function () {
-            var c = new Buffer([]); // actual content shouldn't matter (nor its type)
-            var rx = /charset=/i;
+            "is omitted for path with *empty* extension": function () {
+                var c = "shouldNotMatter";
+                refute.match(this.ctFor(".", c), /charset=/i);
+            },
 
-            refute.match(this.ctFor(".png",   c), rx);
-            refute.match(this.ctFor(".jpg",   c), rx);
-            refute.match(this.ctFor(".jpeg",  c), rx);
-            refute.match(this.ctFor(".gif",   c), rx);
-            refute.match(this.ctFor(".ico",   c), rx);
-            refute.match(this.ctFor(".tif",   c), rx);
-            refute.match(this.ctFor(".tiff",  c), rx);
-            refute.match(this.ctFor(".alien", c), rx);
+            "is omitted for binary files": function () {
+                var c = new Buffer([]); // actual content shouldn't matter (nor its type)
+                var rx = /charset=/i;
+
+                refute.match(this.ctFor(".png",   c), rx);
+                refute.match(this.ctFor(".jpg",   c), rx);
+                refute.match(this.ctFor(".jpeg",  c), rx);
+                refute.match(this.ctFor(".gif",   c), rx);
+                refute.match(this.ctFor(".ico",   c), rx);
+                refute.match(this.ctFor(".tif",   c), rx);
+                refute.match(this.ctFor(".tiff",  c), rx);
+                refute.match(this.ctFor(".alien", c), rx);
+            }
         }
     },
 
