@@ -36,19 +36,20 @@ buster.testCase("Resource set cache", {
     setUp: function (done) {
         this.clock = this.useFakeTimers();
         this.rs = rr.createResourceSet();
-        this.cache = rr.createCache({ ttl: 250 });
 
+        var cache = this.cache = rr.createCache({ ttl: 250 });
         var rs = rr.createResourceSet();
         when.all([
             add(rs, "/buster.js", "Yo!", { etag: "abcd1234" }),
             add(rs, "/sinon.js", "Hey!", {})
         ], function () {
-            this.cache.inflate(rs).then(function () { done(); });
-        }.bind(this));
+            cache.inflate(rs).then(function () { done(); });
+        });
     },
 
     "inflate": {
         setUp: function (done) {
+            var cache = this.cache;
             var rs = rr.createResourceSet();
             add(rs, "/buster.coffee", "Yoo!", {
                 etag: "dedede",
@@ -57,14 +58,15 @@ buster.testCase("Resource set cache", {
                     mimeType: "text/uppercase"
                 }]
             }).then(function () {
-                this.cache.inflate(rs).then(function () { done(); });
-            }.bind(this));
+                cache.inflate(rs).then(function () { done(); });
+            });
         },
 
         "resolves with resource set": function (done) {
-            this.cache.inflate(this.rs).then(done(function (rs) {
-                assert.same(rs, this.rs);
-            }.bind(this)));
+            var rs = this.rs;
+            this.cache.inflate(rs).then(done(function (actualRs) {
+                assert.same(actualRs, rs);
+            }));
         },
 
         "uses cached content for empty-content resource": function (done) {
@@ -121,54 +123,60 @@ buster.testCase("Resource set cache", {
         },
 
         "does not cache identical versions multiple times": function (done) {
-            addResourcesAndInflate(this.cache, this.rs, [
+            var rs = this.rs;
+            var cache = this.cache;
+            addResourcesAndInflate(cache, rs, [
                 ["/sinon.js", "Huh", { etag: "123" }]
-            ], function (rs) {
-                var cacheSize = this.cache.size();
-                addResourcesAndInflate(this.cache, this.rs, [
+            ], function () {
+                var cacheSize = cache.size();
+                addResourcesAndInflate(cache, rs, [
                     ["/sinon.js", "Huh", { etag: "123" }]
-                ], done(function (rs) {
-                    assert.equals(cacheSize, this.cache.size());
-                }.bind(this)));
-            }.bind(this));
+                ], done(function () {
+                    assert.equals(cacheSize, cache.size());
+                }));
+            });
         },
 
         "does not cache uncacheable resource": function (done) {
+            var cache = this.cache;
             var rs2 = rr.createResourceSet();
-            addResourcesAndInflate(this.cache, this.rs, [
+            addResourcesAndInflate(cache, this.rs, [
                 ["/uncacheable.js", "Stuff", { cacheable: false, etag: "1" }]
             ], function () {
-                addResourcesAndInflate(this.cache, rs2, [
+                addResourcesAndInflate(cache, rs2, [
                     ["/uncacheable.js", "", { etag: "1" }]
                 ], function (rs) {
                     assert.content(rs.get("/uncacheable.js"), "", done);
                 });
-            }.bind(this));
+            });
         },
 
         "does not cache resources when content() rejects": function (done) {
+            var cache = this.cache;
             var rs2 = rr.createResourceSet();
             var d = when.defer();
             d.resolver.reject("Oh noes");
-            addResourcesAndInflate(this.cache, this.rs, [
+            addResourcesAndInflate(cache, this.rs, [
                 ["/sinon.js", function () { return d.promise; }, { etag: "1" }]
             ], function () {
-                addResourcesAndInflate(this.cache, rs2, [
+                addResourcesAndInflate(cache, rs2, [
                     ["/sinon.js", "", { etag: "1" }]
                 ], function (rs) {
                     assert.content(rs.get("/sinon.js"), "", done);
                 });
-            }.bind(this));
+            });
         },
 
+        // TODO: how does this validate that there's no lookup?
         "does not look up from cache when content() rejects": function (done) {
+            var cache = this.cache;
             var rs2 = rr.createResourceSet();
             var d = when.defer();
             d.resolver.reject("Oh noes");
-            addResourcesAndInflate(this.cache, this.rs, [
+            addResourcesAndInflate(cache, this.rs, [
                 ["/a.js", "Cached", { etag: "1" }]
             ], function () {
-                addResourcesAndInflate(this.cache, rs2, [
+                addResourcesAndInflate(cache, rs2, [
                     ["/a.js", function () { return d.promise; }, { etag: "1" }]
                 ], function (rs) {
                     rs.get("/a.js").content().then(
@@ -178,22 +186,24 @@ buster.testCase("Resource set cache", {
                         })
                     );
                 });
-            }.bind(this));
+            });
         },
 
+        // TODO: how does this validate that there's no lookup?
         "does not look up from cache when content() throws": function (done) {
+            var cache = this.cache;
             var rs2 = rr.createResourceSet();
-            addResourcesAndInflate(this.cache, this.rs, [
+            addResourcesAndInflate(cache, this.rs, [
                 ["/a.js", "Cached", { etag: "1" }]
             ], function () {
-                addResourcesAndInflate(this.cache, rs2, [
+                addResourcesAndInflate(cache, rs2, [
                     ["/a.js", function () { throw "WOW"; }, { etag: "1" }]
                 ], done(function (rs) {
                     assert.exception(function () {
                         rs.get("/a.js").content();
                     });
                 }));
-            }.bind(this));
+            });
         },
 
         "uses entire cached resource": function (done) {
@@ -216,16 +226,17 @@ buster.testCase("Resource set cache", {
         "keeps resources indefinitely with -1 ttl": function (done) {
             var rs = rr.createResourceSet();
             var cache = rr.createCache({ ttl: -1 });
+            var clock = this.clock;
 
             add(rs, "/buster.js", "Yo!", { etag: "abcd" }).then(function () {
                 cache.inflate(rs).then(done(function () {
-                    this.clock.tick(30 * 24 * 60 * 60 * 1000);
+                    clock.tick(30 * 24 * 60 * 60 * 1000);
 
                     assert.equals(cache.resourceVersions(), {
                         "/buster.js": ["abcd"]
                     });
-                }.bind(this)));
-            }.bind(this));
+                }));
+            });
         }
     },
 
@@ -280,10 +291,12 @@ buster.testCase("Resource set cache", {
         },
 
         "adjusts cache byte size approximation when adding": function () {
-            add(this.rs, "/sinon.js", "Yeah", { etag: "1" }).then(function (r) {
-                this.cache.inflate(this.rs);
-                assert.equals(this.cache.size(), 148);
-            }.bind(this));
+            var cache = this.cache;
+            var rs = this.rs;
+            add(rs, "/sinon.js", "Yeah", { etag: "1" }).then(function () {
+                cache.inflate(rs);
+                assert.equals(cache.size(), 148);
+            });
         }
     },
 
