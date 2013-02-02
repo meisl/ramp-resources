@@ -1,6 +1,6 @@
+/*jslint maxlen:100*/
 var buster = require("buster");
 var rr = require("../lib/ramp-resources");
-require("./test-helper.js");
 
 buster.testCase("Load path", {
     setUp: function () {
@@ -9,9 +9,8 @@ buster.testCase("Load path", {
 
     "append": {
         "fails if resource does not exist": function () {
-            assert.exception(function () {
-                this.rs.loadPath.append("/foo.js");
-            }.bind(this));
+            var rs = this.rs;
+            assert.exception(function () { rs.loadPath.append("/foo.js"); });
         },
 
         "adds existing resource to path": function () {
@@ -51,9 +50,9 @@ buster.testCase("Load path", {
 
     "prepend": {
         "fails if resource does not exist": function () {
-            assert.exception(function () {
-                this.rs.loadPath.prepend("/foo.js");
-            }.bind(this));
+            var rs = this.rs;
+
+            assert.exception(function () { rs.loadPath.prepend("/foo.js"); });
         },
 
         "adds existing resource to path": function () {
@@ -78,8 +77,7 @@ buster.testCase("Load path", {
             this.rs.loadPath.append("/baz.js");
             this.rs.loadPath.prepend(["/foo.js", "/bar.js"]);
 
-            assert.equals(this.rs.loadPath.paths(),
-                          ["/foo.js", "/bar.js", "/baz.js"]);
+            assert.equals(this.rs.loadPath.paths(), ["/foo.js", "/bar.js", "/baz.js"]);
         },
 
         "adds resources in reverse order": function () {
