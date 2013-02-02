@@ -14,9 +14,13 @@ function addResourcesAndInflate(cache, resourceSet, resources, done) {
     var promises = resources.map(function (r) {
         add.apply(this, [resourceSet].concat(r));
     });
-    when.all(promises).then(function () {
-        cache.inflate(resourceSet).then(done);
-    });
+    when.all(promises).then(
+        function () {
+            cache.inflate(resourceSet).then(
+                done
+            );
+        }
+    );
 }
 
 function maxSizeSetUp(done) {
@@ -43,7 +47,9 @@ buster.testCase("Resource set cache", {
             add(rs, "/buster.js", "Yo!", { etag: "abcd1234" }),
             add(rs, "/sinon.js", "Hey!", {})
         ], function () {
-            cache.inflate(rs).then(function () { done(); });
+            cache.inflate(rs).then(
+                function () { done(); }
+            );
         });
     },
 
@@ -57,16 +63,22 @@ buster.testCase("Resource set cache", {
                     content: "HAHA",
                     mimeType: "text/uppercase"
                 }]
-            }).then(function () {
-                cache.inflate(rs).then(function () { done(); });
-            });
+            }).then(
+                function () {
+                    cache.inflate(rs).then(
+                        function () { done(); }
+                    );
+                }
+            );
         },
 
         "resolves with resource set": function (done) {
             var rs = this.rs;
-            this.cache.inflate(rs).then(done(function (actualRs) {
-                assert.same(actualRs, rs);
-            }));
+            this.cache.inflate(rs).then(
+                done(function (actualRs) {
+                    assert.same(actualRs, rs);
+                })
+            );
         },
 
         "uses cached content for empty-content resource": function (done) {
@@ -228,15 +240,19 @@ buster.testCase("Resource set cache", {
             var cache = rr.createCache({ ttl: -1 });
             var clock = this.clock;
 
-            add(rs, "/buster.js", "Yo!", { etag: "abcd" }).then(function () {
-                cache.inflate(rs).then(done(function () {
-                    clock.tick(30 * 24 * 60 * 60 * 1000);
+            add(rs, "/buster.js", "Yo!", { etag: "abcd" }).then(
+                function () {
+                    cache.inflate(rs).then(
+                        done(function () {
+                            clock.tick(30 * 24 * 60 * 60 * 1000);
 
-                    assert.equals(cache.resourceVersions(), {
-                        "/buster.js": ["abcd"]
-                    });
-                }));
-            });
+                            assert.equals(cache.resourceVersions(), {
+                                "/buster.js": ["abcd"]
+                            });
+                        })
+                    );
+                }
+            );
         }
     },
 
@@ -293,10 +309,12 @@ buster.testCase("Resource set cache", {
         "adjusts cache byte size approximation when adding": function () {
             var cache = this.cache;
             var rs = this.rs;
-            add(rs, "/sinon.js", "Yeah", { etag: "1" }).then(function () {
-                cache.inflate(rs);
-                assert.equals(cache.size(), 148);
-            });
+            add(rs, "/sinon.js", "Yeah", { etag: "1" }).then(
+                function () {
+                    cache.inflate(rs);
+                    assert.equals(cache.size(), 148);
+                }
+            );
         }
     },
 
