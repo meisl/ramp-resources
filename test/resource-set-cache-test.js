@@ -1,7 +1,10 @@
+/*jslint maxlen:100 */
 var buster = require("buster");
 var when = require("when");
 var rr = require("../lib/ramp-resources");
-require("./test-helper");
+var h = require("./test-helper");
+var shouldResolve = h.shouldResolve;
+var shouldReject = h.shouldReject;
 
 function add(rs, path, content, options) {
     return rs.addResource(buster.extend({
@@ -48,7 +51,9 @@ buster.testCase("Resource set cache", {
             add(rs, "/sinon.js", "Hey!", {})
         ], function () {
             cache.inflate(rs).then(
-                function () { done(); }
+                done(function () {}), // ATTENTION: do NOT pass just `done`!
+                                       // It'll behave different when it gets a parameter...
+                done(shouldResolve)
             );
         });
     },
@@ -68,7 +73,8 @@ buster.testCase("Resource set cache", {
                     cache.inflate(rs).then(
                         function () { done(); }
                     );
-                }
+                },
+                done(shouldResolve)
             );
         },
 
@@ -77,7 +83,8 @@ buster.testCase("Resource set cache", {
             this.cache.inflate(rs).then(
                 done(function (actualRs) {
                     assert.same(actualRs, rs);
-                })
+                }),
+                done(shouldResolve)
             );
         },
 
@@ -192,7 +199,7 @@ buster.testCase("Resource set cache", {
                     ["/a.js", function () { return d.promise; }, { etag: "1" }]
                 ], function (rs) {
                     rs.get("/a.js").content().then(
-                        function () {},
+                        done(shouldReject),
                         done(function (err) {
                             assert.equals(err, "Oh noes");
                         })
@@ -249,9 +256,11 @@ buster.testCase("Resource set cache", {
                             assert.equals(cache.resourceVersions(), {
                                 "/buster.js": ["abcd"]
                             });
-                        })
+                        }),
+                        done(shouldResolve)
                     );
-                }
+                },
+                done(shouldResolve)
             );
         }
     },
@@ -306,14 +315,20 @@ buster.testCase("Resource set cache", {
             assert.equals(this.cache.size(), 77);
         },
 
-        "adjusts cache byte size approximation when adding": function () {
+        // TODO: comment on +`done`
+        "adjusts cache byte size approximation when adding": function (done) {
             var cache = this.cache;
             var rs = this.rs;
             add(rs, "/sinon.js", "Yeah", { etag: "1" }).then(
                 function () {
-                    cache.inflate(rs);
-                    assert.equals(cache.size(), 148);
-                }
+                    cache.inflate(rs).then(
+                        done(function () {
+                            assert.equals(cache.size(), 148);
+                        }),
+                        done(shouldResolve)
+                    );
+                },
+                done(shouldResolve)
             );
         }
     },
